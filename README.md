@@ -35,8 +35,11 @@ Untuk panduan lengkap langkah-demi-langkah membuka dan menjalankan aplikasi ini 
 ---
 
 ## 🛠️ Tech Stack & Dependencies
+- **Target Platform**: Khusus Android (OS Android 8.0+ / API 26+)
 - **Framework**: Flutter 3.x / Dart 3.x
 - **IDE**: Android Studio
 - **Sensor**: `sensors_plus` (Hardware Accelerometer Telemetry)
 - **Sharing**: `share_plus` (Broadcast Room Link / Code)
 - **Design System**: Material 3 Modern Slate Dark UI with Live Sync Telemetry
+*(Catatan: Direktori platform non-Android seperti iOS, Windows, macOS, Linux, dan Web telah dibersihkan agar project ramping, ringan, dan fokus pada target Android).*
+
