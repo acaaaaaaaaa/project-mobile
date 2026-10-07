@@ -1,20 +1,14 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:focus_room/main.dart';
 
 void main() {
-  testWidgets('FocusRoomApp smoke test', (WidgetTester tester) async {
+  testWidgets('StudyPact smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const FocusRoomApp());
+    await tester.pumpAndSettle();
 
-    // Verify that title or main UI renders
-    expect(find.text('FocusRoom'), findsWidgets);
+    // Verify that StudyPact branding and Farhan greeting render
+    expect(find.text('StudyPact'), findsWidgets);
+    expect(find.text('Halo, Farhan!'), findsOneWidget);
   });
 }

@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'screens/home_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ),
+  );
   runApp(const FocusRoomApp());
 }
 
@@ -12,26 +20,10 @@ class FocusRoomApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FocusRoom - Study Group Anti-Distraction',
+      title: 'StudyPact - Focus & Study Group Anti-Distraction',
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF6366F1), // Indigo
-          secondary: Color(0xFF06B6D4), // Cyan
-          surface: Color(0xFF1E293B), // Slate 800
-          error: Color(0xFFEF4444), // Red
-        ),
-        fontFamily: 'Roboto',
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E293B),
-          elevation: 0,
-          centerTitle: false,
-        ),
-        useMaterial3: true,
-      ),
+      themeMode: ThemeMode.light,
+      theme: AppTheme.lightTheme,
       home: const HomeScreen(),
     );
   }
