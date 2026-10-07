@@ -76,9 +76,16 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
                 if (ctx.mounted) {
                   Navigator.of(ctx).pop();
                   _showSessionStartedSnackbar();
+                  final room = RoomService().currentRoom;
+                  RoomService().startSession();
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const ActiveSessionScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => ActiveSessionScreen(
+                        totalMinutes: room?.durationMinutes ?? 45,
+                        roomTitle: room?.title ?? 'Kerkom Algoritma Lanjut',
+                      ),
+                    ),
                   );
                 }
               }
