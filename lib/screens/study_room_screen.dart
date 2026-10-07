@@ -396,7 +396,7 @@ class _StudyRoomScreenState extends State<StudyRoomScreen> with SingleTickerProv
               const Icon(Icons.sensors_rounded, color: Colors.cyanAccent, size: 18),
               const SizedBox(width: 8),
               const Text(
-                'Komputasi Sensor (Accelerometer Telemetri)',
+                'Sensor Gerak & Kemiringan',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -435,7 +435,7 @@ class _StudyRoomScreenState extends State<StudyRoomScreen> with SingleTickerProv
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Akselerasi Gerak: ${mag.toStringAsFixed(2)} m/s²',
+                'Gerak: ${mag.toStringAsFixed(2)} m/s² • Miring: ${_sensorService.orientationChangeDeg.toStringAsFixed(0)}°',
                 style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
               GestureDetector(

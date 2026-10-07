@@ -342,21 +342,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     final leaderName = nameCtrl.text.trim().isEmpty ? 'Leader' : nameCtrl.text.trim();
                     final title = titleCtrl.text.trim().isEmpty ? 'Sesi Belajar' : titleCtrl.text.trim();
-
-                    _roomService.createRoom(
-                      leaderName: leaderName,
-                      title: title,
-                      durationMinutes: selectedDuration,
-                    );
-
-                    Navigator.pop(ctx);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const StudyRoomScreen()),
-                    );
+                    try {
+                      await _roomService.createRoom(
+                        leaderName: leaderName,
+                        title: title,
+                        durationMinutes: selectedDuration,
+                      );
+                      if (!context.mounted) return;
+                      Navigator.pop(ctx);
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const StudyRoomScreen()),
+                      );
+                    } catch (error) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Gagal membuat room: $error')),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4F46E5),
@@ -376,7 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showJoinRoomSheet(BuildContext context) {
     final nameCtrl = TextEditingController(text: 'Nama Saya');
-    final codeCtrl = TextEditingController(text: 'ROOM-');
+    final codeCtrl = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -427,7 +433,7 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: codeCtrl,
               style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontWeight: FontWeight.bold),
               decoration: InputDecoration(
-                labelText: 'Kode Room (contoh: ROOM-1234)',
+                labelText: 'Kode Room (6 karakter)',
                 labelStyle: const TextStyle(color: Colors.white70),
                 prefixIcon: const Icon(Icons.key_rounded, color: Colors.tealAccent),
                 filled: true,
@@ -437,20 +443,32 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final memberName = nameCtrl.text.trim().isEmpty ? 'Anggota' : nameCtrl.text.trim();
-                final roomCode = codeCtrl.text.trim().isEmpty ? 'ROOM-1000' : codeCtrl.text.trim();
-
-                _roomService.joinRoom(
-                  memberName: memberName,
-                  roomCode: roomCode,
-                );
-
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const StudyRoomScreen()),
-                );
+                final roomCode = codeCtrl.text.trim();
+                if (roomCode.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Masukkan kode room.')),
+                  );
+                  return;
+                }
+                try {
+                  await _roomService.joinRoom(
+                    memberName: memberName,
+                    roomCode: roomCode,
+                  );
+                  if (!context.mounted) return;
+                  Navigator.pop(ctx);
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const StudyRoomScreen()),
+                  );
+                } catch (error) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal bergabung: $error')),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0D9488),
@@ -466,10 +484,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showSensorDiagnosticDialog(BuildContext context) {
+  Future<void> _showSensorDiagnosticDialog(BuildContext context) async {
     _sensorService.startMonitoring();
 
-    showDialog(
+    await showDialog<void>(
       context: context,
       builder: (ctx) => StreamBuilder<SensorReading>(
         stream: _sensorService.readingStream,
@@ -534,5 +552,6 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
     );
+    _sensorService.stopMonitoring();
   }
 }
