@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'active_session_screen.dart';
 
-/// Wrapper compatibility untuk StudyRoomScreen yang mengarahkan ke ActiveSessionScreen desain baru
+/// Wrapper compatibility untuk StudyRoomScreen yang mengarahkan ke ActiveSessionScreen
 class StudyRoomScreen extends StatelessWidget {
   const StudyRoomScreen({super.key});
 

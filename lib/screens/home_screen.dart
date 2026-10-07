@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/room_service.dart';
+import '../services/sensor_service.dart';
 import 'beranda_screen.dart';
 import 'ruang_sesi_screen.dart';
 import 'riwayat_log_screen.dart';
@@ -292,5 +293,78 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void showSensorDiagnosticDialog(BuildContext context) async {
+    final sensorService = PhoneMotionService();
+    sensorService.startMonitoring();
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StreamBuilder<SensorReading>(
+        stream: sensorService.readingStream,
+        builder: (ctx, snapshot) {
+          final reading = snapshot.data;
+          final mag = reading?.magnitude ?? 0.0;
+          final isLifted = mag > sensorService.sensitivity.threshold;
+
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.sensors_rounded, color: Colors.cyanAccent),
+                SizedBox(width: 8),
+                Text('Uji Responsivitas Sensor', style: TextStyle(color: Colors.white, fontSize: 16)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isLifted ? 'STATUS: TERANGKAT / BERGERAK' : 'STATUS: MEJA (DIAM)',
+                  style: TextStyle(
+                    color: isLifted ? Colors.redAccent : Colors.greenAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Akselerasi Saat Ini: ${mag.toStringAsFixed(2)} m/s²',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: (mag / 8.0).clamp(0.0, 1.0),
+                    backgroundColor: Colors.black38,
+                    color: isLifted ? Colors.redAccent : Colors.greenAccent,
+                    minHeight: 8,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Letakkan HP mendatar di meja, lalu coba angkat dengan tangan. Nilai akselerasi akan melonjak mendeteksi pergerakan.',
+                  style: TextStyle(color: Colors.white60, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  sensorService.stopMonitoring();
+                  Navigator.pop(ctx);
+                },
+                child: const Text('Tutup', style: TextStyle(color: Colors.cyanAccent)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    sensorService.stopMonitoring();
   }
 }

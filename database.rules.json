@@ -1,0 +1,32 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "rooms": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true,
+        "members": {
+          "$memberId": {
+            ".read": true,
+            ".write": true
+          }
+        },
+        "alerts": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    "session_logs": {
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}

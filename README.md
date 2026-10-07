@@ -83,3 +83,15 @@ Aplikasi telah mengimplementasikan seluruh desain visual modern dengan presisi t
 
 Untuk panduan instalasi lengkap dari nol bagi pemula, lihat:  
 👉 **[PANDUAN_SETUP_ANDROID_STUDIO.md](PANDUAN_SETUP_ANDROID_STUDIO.md)**
+
+---
+
+## 🛠️ Tech Stack & Dependencies
+- **Target Platform**: Khusus Android (OS Android 8.0+ / API 26+)
+- **Framework**: Flutter 3.x / Dart 3.x
+- **IDE**: Android Studio
+- **Backend / Realtime Database**: Firebase Realtime Database (`https://kerkom-project-default-rtdb.asia-southeast1.firebasedatabase.app/`)
+- **Sensor**: `sensors_plus` (Hardware Accelerometer Telemetry)
+- **Sharing**: `share_plus` (Broadcast Room Link / Code)
+- **Design System**: Material 3 Modern Slate Dark UI with Live Sync Telemetry
+

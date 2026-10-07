@@ -1,0 +1,136 @@
+{
+  "specVersion": "v1alpha1",
+  "endpoints": {
+    "createRoom": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": 30,
+      "minInstances": null,
+      "maxInstances": 10,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "asia-southeast1"
+      ],
+      "labels": {},
+      "callableTrigger": {},
+      "entryPoint": "createRoom"
+    },
+    "joinRoom": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": 30,
+      "minInstances": null,
+      "maxInstances": 10,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "asia-southeast1"
+      ],
+      "labels": {},
+      "callableTrigger": {},
+      "entryPoint": "joinRoom"
+    },
+    "leaveRoom": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": 30,
+      "minInstances": null,
+      "maxInstances": 10,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "asia-southeast1"
+      ],
+      "labels": {},
+      "callableTrigger": {},
+      "entryPoint": "leaveRoom"
+    },
+    "startSession": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": 30,
+      "minInstances": null,
+      "maxInstances": 10,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "asia-southeast1"
+      ],
+      "labels": {},
+      "callableTrigger": {},
+      "entryPoint": "startSession"
+    },
+    "endSession": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": 30,
+      "minInstances": null,
+      "maxInstances": 10,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "asia-southeast1"
+      ],
+      "labels": {},
+      "callableTrigger": {},
+      "entryPoint": "endSession"
+    },
+    "submitFocusEvent": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": 30,
+      "minInstances": null,
+      "maxInstances": 10,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "asia-southeast1"
+      ],
+      "labels": {},
+      "callableTrigger": {},
+      "entryPoint": "submitFocusEvent"
+    },
+    "notifyFocusEvent": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": 30,
+      "minInstances": null,
+      "maxInstances": 10,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "asia-southeast1"
+      ],
+      "labels": {},
+      "eventTrigger": {
+        "eventType": "google.cloud.firestore.document.v1.created",
+        "eventFilters": {
+          "database": "(default)",
+          "namespace": "(default)"
+        },
+        "eventFilterPathPatterns": {
+          "document": "rooms/{roomId}/sessions/{sessionId}/events/{eventId}"
+        },
+        "retry": false
+      },
+      "entryPoint": "notifyFocusEvent"
+    }
+  },
+  "extensions": {},
+  "requiredAPIs": []
+}

@@ -1,0 +1,92 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isRoomMember(roomId) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
+    }
+
+    function isActiveRoomMember(roomId) {
+      return isRoomMember(roomId) &&
+        get(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
+          .data.active == true;
+    }
+
+    match /users/{uid} {
+      allow read: if isSelf(uid);
+      allow create, update, delete: if false;
+
+      match /devices/{deviceId} {
+        allow read: if false;
+        allow create, update: if isSelf(uid)
+          && request.resource.data.keys().hasOnly([
+            'token', 'platform', 'updatedAt'
+          ])
+          && request.resource.data.token is string
+          && request.resource.data.token.size() > 20
+          && request.resource.data.platform == 'android'
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isSelf(uid);
+      }
+    }
+
+    match /roomCodes/{code} {
+      allow read, write: if false;
+    }
+
+    match /rooms/{roomId} {
+      allow get: if isRoomMember(roomId);
+      allow list, create, update, delete: if false;
+
+      match /members/{uid} {
+        allow read: if isRoomMember(roomId);
+        allow write: if false;
+      }
+
+      match /sessions/{sessionId} {
+        allow read: if isRoomMember(roomId);
+        allow write: if false;
+
+        match /events/{eventId} {
+          allow read: if isRoomMember(roomId);
+          allow write: if false;
+        }
+
+        match /episodeLocks/{lockId} {
+          allow read, write: if false;
+        }
+
+        match /presence/{uid} {
+          allow read: if isRoomMember(roomId);
+          allow create, update: if isSelf(uid)
+            && isActiveRoomMember(roomId)
+            && request.resource.data.keys().hasOnly([
+              'state', 'heartbeatAt', 'updatedAt'
+            ])
+            && request.resource.data.state in [
+              'focusing',
+              'suspected_use',
+              'monitoring_interrupted',
+              'allowed_use'
+            ]
+            && request.resource.data.heartbeatAt == request.time
+            && request.resource.data.updatedAt == request.time;
+          allow delete: if isSelf(uid);
+        }
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -3,29 +3,26 @@ import 'dart:math';
 import 'package:sensors_plus/sensors_plus.dart';
 
 enum DetectionSensitivity {
-  low(threshold: 3.5, label: 'Rendah (Hanya gerakan cepat)'),
-  medium(threshold: 2.2, label: 'Sedang (Rekomendasi)'),
-  high(threshold: 1.2, label: 'Tinggi (Sangat peka)');
-
+  low(threshold: 3.5, label: 'Rendah'),
+  medium(threshold: 2.2, label: 'Sedang'),
+  high(threshold: 1.2, label: 'Tinggi');
   final double threshold;
   final String label;
   const DetectionSensitivity({required this.threshold, required this.label});
 }
 
 class SensorReading {
-  final double x;
-  final double y;
-  final double z;
-  final double magnitude;
+  final double x, y, z, magnitude;
   final DateTime timestamp;
+  SensorReading(this.x, this.y, this.z, this.magnitude, this.timestamp);
+}
 
-  SensorReading({
-    required this.x,
-    required this.y,
-    required this.z,
-    required this.magnitude,
-    required this.timestamp,
-  });
+class MotionEpisode {
+  final DateTime observedAt;
+  final int durationMs;
+  final double peakAccel, peakGyro, orientationChangeDeg, confidence;
+  MotionEpisode(this.observedAt, this.durationMs, this.peakAccel,
+      this.peakGyro, this.orientationChangeDeg, this.confidence);
 }
 
 class PhoneMotionService {
@@ -33,143 +30,134 @@ class PhoneMotionService {
   factory PhoneMotionService() => _instance;
   PhoneMotionService._internal();
 
-  StreamSubscription<UserAccelerometerEvent>? _accelerometerSubscription;
-  DetectionSensitivity sensitivity = DetectionSensitivity.medium;
-
-  bool _isMonitoring = false;
-  bool _isPhoneLifted = false;
-  DateTime? _liftedStartTime;
-
-  // Stream controllers untuk UI & Notifikasi
+  StreamSubscription<UserAccelerometerEvent>? _motion;
+  StreamSubscription<AccelerometerEvent>? _gravity;
+  StreamSubscription<GyroscopeEvent>? _gyro;
   final _readingController = StreamController<SensorReading>.broadcast();
-  final _liftStateController = StreamController<bool>.broadcast();
-
+  final _liftController = StreamController<bool>.broadcast();
   Stream<SensorReading> get readingStream => _readingController.stream;
-  Stream<bool> get liftStateStream => _liftStateController.stream;
+  Stream<bool> get liftStateStream => _liftController.stream;
+  DetectionSensitivity sensitivity = DetectionSensitivity.medium;
+  bool _monitoring = false, _lifted = false;
+  bool get isMonitoring => _monitoring;
+  bool get isPhoneLifted => _lifted;
+  DateTime? liftedStartTime;
+  DateTime? _candidateAt, _quietAt, _calibrationUntil;
+  double _gx = 0, _gy = 0, _gz = 9.8;
+  double _bx = 0, _by = 0, _bz = 9.8;
+  double _gyroMagnitude = 0, _peakAccel = 0, _peakGyro = 0, _peakAngle = 0;
+  bool _hasGravity = false;
+  void Function(MotionEpisode)? _onLifted;
+  void Function()? _onResting;
 
-  bool get isMonitoring => _isMonitoring;
-  bool get isPhoneLifted => _isPhoneLifted;
-  DateTime? get liftedStartTime => _liftedStartTime;
-
-  // Kalibrasi baseline
-  double _baselineMagnitude = 0.0;
-  int _consecutiveMovements = 0;
-  int _consecutiveResting = 0;
-
-  void startMonitoring({
-    DetectionSensitivity? customSensitivity,
-    void Function()? onLifted,
-    void Function()? onResting,
-  }) {
-    if (_isMonitoring) return;
-
-    if (customSensitivity != null) {
-      sensitivity = customSensitivity;
-    }
-
-    _isMonitoring = true;
-    _isPhoneLifted = false;
-    _consecutiveMovements = 0;
-    _consecutiveResting = 0;
-
-    try {
-      _accelerometerSubscription = userAccelerometerEventStream().listen(
-        (UserAccelerometerEvent event) {
-          _processReading(event.x, event.y, event.z, onLifted, onResting);
-        },
-        onError: (e) {
-          // Fallback jika platform tidak mendukung sensor (misal emulator tanpa sensor hardware aktif)
-          // Event stream tetap terbuka
-        },
-        cancelOnError: false,
-      );
-    } catch (_) {
-      // Handle error gracefully
-    }
+  void startMonitoring({DetectionSensitivity? customSensitivity,
+      void Function(MotionEpisode)? onLifted, void Function()? onResting}) {
+    _onLifted = onLifted;
+    _onResting = onResting;
+    if (_monitoring) return;
+    if (customSensitivity != null) sensitivity = customSensitivity;
+    _monitoring = true;
+    _lifted = false;
+    _candidateAt = _quietAt = null;
+    _calibrationUntil = DateTime.now().add(const Duration(seconds: 2));
+    _hasGravity = false;
+    _peakAccel = _peakGyro = _peakAngle = 0;
+    _gravity = accelerometerEventStream(
+      samplingPeriod: SensorInterval.gameInterval,
+    ).listen((event) {
+      _gx = event.x; _gy = event.y; _gz = event.z;
+      if (!_hasGravity) {
+        _bx = _gx; _by = _gy; _bz = _gz;
+        _hasGravity = true;
+      }
+      if (DateTime.now().isBefore(_calibrationUntil!) && !_lifted) {
+        _bx = .95 * _bx + .05 * _gx;
+        _by = .95 * _by + .05 * _gy;
+        _bz = .95 * _bz + .05 * _gz;
+      }
+    }, onError: (_) {});
+    _gyro = gyroscopeEventStream(
+      samplingPeriod: SensorInterval.gameInterval,
+    ).listen((event) {
+      _gyroMagnitude = sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
+    }, onError: (_) {});
+    _motion = userAccelerometerEventStream(
+      samplingPeriod: SensorInterval.gameInterval,
+    ).listen((event) {
+      _process(event.x, event.y, event.z);
+    }, onError: (_) {});
   }
 
-  void _processReading(
-    double x,
-    double y,
-    double z,
-    void Function()? onLifted,
-    void Function()? onResting,
-  ) {
+  double get orientationChangeDeg {
+    final dot = _gx * _bx + _gy * _by + _gz * _bz;
+    final norms = sqrt(_gx * _gx + _gy * _gy + _gz * _gz) *
+        sqrt(_bx * _bx + _by * _by + _bz * _bz);
+    if (!_hasGravity || norms < 1) return 0;
+    return acos((dot / norms).clamp(-1.0, 1.0)) * 180 / pi;
+  }
+
+  void _process(double x, double y, double z) {
+    final now = DateTime.now();
     final magnitude = sqrt(x * x + y * y + z * z);
-    final delta = (magnitude - _baselineMagnitude).abs();
-
-    final reading = SensorReading(
-      x: x,
-      y: y,
-      z: z,
-      magnitude: magnitude,
-      timestamp: DateTime.now(),
-    );
-    _readingController.add(reading);
-
-    if (!_isMonitoring) return;
-
-    // Logika Threshold Deteksi
-    if (delta > sensitivity.threshold) {
-      _consecutiveMovements++;
-      _consecutiveResting = 0;
-
-      // Konfirmasi minimal 2 sample bergerak berturut-turut untuk menghindari accidental vibration
-      if (_consecutiveMovements >= 2 && !_isPhoneLifted) {
-        _isPhoneLifted = true;
-        _liftedStartTime = DateTime.now();
-        _liftStateController.add(true);
-        if (onLifted != null) onLifted();
+    _readingController.add(SensorReading(x, y, z, magnitude, now));
+    if (!_monitoring || now.isBefore(_calibrationUntil!)) return;
+    final angle = orientationChangeDeg;
+    final moving = angle >= 25 ||
+        (magnitude >= sensitivity.threshold && _gyroMagnitude >= .35);
+    if (moving) {
+      _quietAt = null;
+      _candidateAt ??= now;
+      _peakAccel = max(_peakAccel, magnitude);
+      _peakGyro = max(_peakGyro, _gyroMagnitude);
+      _peakAngle = max(_peakAngle, angle);
+      if (!_lifted && now.difference(_candidateAt!).inMilliseconds >= 650) {
+        _lifted = true;
+        liftedStartTime = _candidateAt;
+        _liftController.add(true);
+        _onLifted?.call(MotionEpisode(_candidateAt!,
+            now.difference(_candidateAt!).inMilliseconds, _peakAccel,
+            _peakGyro, _peakAngle, .75));
       }
     } else {
-      _consecutiveResting++;
-      _consecutiveMovements = 0;
-
-      // Jika diam selama ~10 sample (sekitar 1 detik), anggap HP sudah ditaruh kembali
-      if (_consecutiveResting >= 10 && _isPhoneLifted) {
-        _isPhoneLifted = false;
-        _liftStateController.add(false);
-        if (onResting != null) onResting();
+      _quietAt ??= now;
+      if (now.difference(_quietAt!).inMilliseconds >= 1200) {
+        _candidateAt = null;
+        _peakAccel = _peakGyro = _peakAngle = 0;
+        if (_lifted) {
+          _lifted = false;
+          _liftController.add(false);
+          _onResting?.call();
+        }
       }
     }
   }
 
-  /// Trigger manual simulasi untuk pengujian di Emulator Android Studio / Komputer
-  void simulatePhoneLift(bool lifted, {void Function()? onLifted, void Function()? onResting}) {
-    _isPhoneLifted = lifted;
-    _liftStateController.add(lifted);
-
-    final simulatedReading = SensorReading(
-      x: lifted ? 2.8 : 0.05,
-      y: lifted ? 3.4 : 0.02,
-      z: lifted ? 1.5 : 0.01,
-      magnitude: lifted ? 4.6 : 0.05,
-      timestamp: DateTime.now(),
-    );
-    _readingController.add(simulatedReading);
-
-    if (lifted && onLifted != null) {
-      onLifted();
-    } else if (!lifted && onResting != null) {
-      onResting();
-    }
+  void calibrateBaseline(double ignored) {
+    _bx = _gx; _by = _gy; _bz = _gz;
+    _candidateAt = null;
+    _peakAccel = _peakGyro = _peakAngle = 0;
   }
 
-  void calibrateBaseline(double currentMag) {
-    _baselineMagnitude = currentMag;
+  void simulatePhoneLift(bool lifted) {
+    if (_lifted == lifted) return;
+    _lifted = lifted;
+    _liftController.add(lifted);
+    _readingController.add(SensorReading(lifted ? 3 : 0, 0, 0,
+        lifted ? 3 : 0, DateTime.now()));
+    if (lifted) {
+      liftedStartTime = DateTime.now();
+      _onLifted?.call(MotionEpisode(liftedStartTime!, 1000, 3, 1, 35, .75));
+    } else {
+      _onResting?.call();
+    }
   }
 
   void stopMonitoring() {
-    _isMonitoring = false;
-    _accelerometerSubscription?.cancel();
-    _accelerometerSubscription = null;
-    _isPhoneLifted = false;
-    _liftStateController.add(false);
-  }
-
-  void dispose() {
-    stopMonitoring();
-    _readingController.close();
-    _liftStateController.close();
+    _monitoring = false;
+    _motion?.cancel(); _gravity?.cancel(); _gyro?.cancel();
+    _motion = null; _gravity = null; _gyro = null;
+    _lifted = false;
+    _candidateAt = null;
+    _liftController.add(false);
   }
 }

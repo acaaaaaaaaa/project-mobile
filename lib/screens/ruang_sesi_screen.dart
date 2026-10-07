@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../widgets/studypact_app_bar.dart';
 import '../widgets/app_avatar.dart';
 import '../services/sensor_service.dart';
+import '../services/room_service.dart';
 import 'incident_screen.dart';
 import 'late_joiner_screen.dart';
 import 'riwayat_log_screen.dart';
@@ -276,6 +277,10 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
   }
 
   Widget _buildRoomCodeCard(BuildContext context) {
+    final currentRoom = RoomService().currentRoom;
+    final roomCode = currentRoom?.code ?? 'PACT-7492';
+    final durationMinutes = currentRoom?.durationMinutes ?? 45;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -300,54 +305,60 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
                         letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Text(
-                          'PACT-7492',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF1E1B4B),
-                            letterSpacing: 0.8,
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Text(
+                      roomCode,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF1E1B4B),
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: roomCode));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Kode ruang ($roomCode) disalin ke clipboard!'),
+                            duration: const Duration(seconds: 2),
                           ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
                         ),
-                        const SizedBox(width: 10),
-                        GestureDetector(
-                          onTap: () {
-                            Clipboard.setData(const ClipboardData(text: 'PACT-7492'));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Kode ruang disalin ke clipboard!'),
-                                duration: Duration(seconds: 2),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.copy_rounded, size: 12, color: Color(0xFF4F46E5)),
+                            SizedBox(width: 4),
+                            Text(
+                              'Salin',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF4F46E5),
                               ),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFCBD5E1)),
                             ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.copy_rounded, size: 12, color: Color(0xFF4F46E5)),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Salin',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF4F46E5),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -359,22 +370,22 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFD6E4FF)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.timer_outlined, size: 18, color: Color(0xFF1E1B4B)),
-                    SizedBox(width: 6),
+                    const Icon(Icons.timer_outlined, size: 18, color: Color(0xFF1E1B4B)),
+                    const SizedBox(width: 6),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '45 Menit',
-                          style: TextStyle(
+                          '$durationMinutes Menit',
+                          style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF1E1B4B),
                           ),
                         ),
-                        Text(
+                        const Text(
                           'Standar No-Break',
                           style: TextStyle(
                             fontSize: 9.5,

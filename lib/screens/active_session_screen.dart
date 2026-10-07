@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_avatar.dart';
 import '../services/sensor_service.dart';
+import '../services/room_service.dart';
+import '../models/room_model.dart';
 import 'incident_screen.dart';
 import 'riwayat_log_screen.dart';
 
@@ -23,8 +25,10 @@ class ActiveSessionScreen extends StatefulWidget {
 
 class _ActiveSessionScreenState extends State<ActiveSessionScreen> {
   final PhoneMotionService _sensorService = PhoneMotionService();
+  final RoomService _roomService = RoomService();
   StreamSubscription<SensorReading>? _sensorSub;
   StreamSubscription<bool>? _liftSub;
+  StreamSubscription<String>? _roomAlertSub;
 
   late int _remainingSeconds;
   Timer? _countdownTimer;
@@ -43,7 +47,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> {
     _remainingSeconds = 34 * 60 + 12;
 
     _sensorService.startMonitoring(
-      onLifted: _handlePhoneLifted,
+      onLifted: (episode) => _handlePhoneLifted(),
     );
 
     _sensorSub = _sensorService.readingStream.listen((reading) {
@@ -76,6 +80,20 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> {
         _navigateToSummary();
       }
     });
+
+    _roomAlertSub = _roomService.distractionAlertStream.listen((alertMsg) {
+      if (mounted) {
+        HapticFeedback.mediumImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(alertMsg, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            backgroundColor: const Color(0xFFDC2626),
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
   }
 
   void _handlePhoneLifted() {
@@ -97,6 +115,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> {
   void dispose() {
     _sensorSub?.cancel();
     _liftSub?.cancel();
+    _roomAlertSub?.cancel();
     _countdownTimer?.cancel();
     super.dispose();
   }
@@ -490,78 +509,115 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> {
   }
 
   Widget _buildActiveGroupSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return ListenableBuilder(
+      listenable: _roomService,
+      builder: (context, _) {
+        final currentRoom = _roomService.currentRoom;
+        final currentUserId = _roomService.currentUser?.id;
+        final members = currentRoom?.members;
+        final memberCount = members != null && members.isNotEmpty ? members.length : 4;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Row(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.hub_rounded, size: 16, color: Color(0xFF312E81)),
-                SizedBox(width: 6),
-                Text(
-                  'Kelompok Belajar Aktif (4)',
+                Row(
+                  children: [
+                    const Icon(Icons.hub_rounded, size: 16, color: Color(0xFF312E81)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Kelompok Belajar Aktif ($memberCount)',
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const Text(
+                  'Sesi Komitmen Fisik',
                   style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w900,
-                    color: AppTheme.textPrimary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.textMuted,
                   ),
                 ),
               ],
             ),
-            const Text(
-              'Sesi Komitmen Fisik',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.textMuted,
+            const SizedBox(height: 10),
+            if (members != null && members.isNotEmpty) ...[
+              for (final member in members)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: () {
+                    final isSelf = member.id == currentUserId;
+                    final isLifted = member.status == MemberStatus.phoneLifted;
+                    return _buildActiveMemberTile(
+                      name: member.name + (isSelf ? ' (Anda)' : ''),
+                      isSelf: isSelf,
+                      subtext: isLifted
+                          ? '⚠️ HP Terangkat! (${member.distractionCount}x gangguan)'
+                          : isSelf
+                              ? 'HP Diam di Meja • ${_pitch.abs().toStringAsFixed(1)}° kemiringan'
+                              : 'Stabil di Meja Belajar',
+                      statusPill: isLifted
+                          ? _buildPill('🚨 Terangkat!', const Color(0xFFFEE2E2), const Color(0xFFB91C1C))
+                          : _buildPill('● Aman', const Color(0xFF6EE7B7), const Color(0xFF064E3B)),
+                      avatarUrl: member.avatarUrl,
+                      initials: member.avatarUrl == null && member.name.isNotEmpty
+                          ? member.name.substring(0, 1).toUpperCase()
+                          : null,
+                      dotColor: isLifted ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                    );
+                  }(),
+                ),
+            ] else ...[
+              // Member 1: Farhan (Anda)
+              _buildActiveMemberTile(
+                name: 'Farhan',
+                isSelf: true,
+                subtext: 'HP Diam di Meja • 0.0° kemiringan',
+                statusPill: _buildPill('● Aman', const Color(0xFF6EE7B7), const Color(0xFF064E3B)),
+                avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+                dotColor: const Color(0xFF10B981),
               ),
-            ),
+              const SizedBox(height: 8),
+
+              // Member 2: Rizky R.
+              _buildActiveMemberTile(
+                name: 'Rizky R.',
+                subtext: 'Stabil di Meja Belajar',
+                statusPill: _buildPill('✓ 34m Tetap', const Color(0xFF6EE7B7), const Color(0xFF064E3B)),
+                avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
+                dotColor: const Color(0xFF10B981),
+              ),
+              const SizedBox(height: 8),
+
+              // Member 3: Nabila P.
+              _buildActiveMemberTile(
+                name: 'Nabila P.',
+                subtext: 'Travel Mode (Gyro OK)',
+                statusPill: _buildPill('🚆 Mobil', const Color(0xFFDBEAFE), const Color(0xFF1D4ED8)),
+                avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+                dotColor: const Color(0xFF6366F1),
+              ),
+              const SizedBox(height: 8),
+
+              // Member 4: Budi Santoso
+              _buildActiveMemberTile(
+                name: 'Budi Santoso',
+                subtext: 'Reconnecting (42s)... Mencari sinyal',
+                statusPill: _buildPill('🔄 Menunggu', const Color(0xFFFED7AA), const Color(0xFF9A3412)),
+                initials: 'BS',
+                dotColor: const Color(0xFFF59E0B),
+              ),
+            ],
           ],
-        ),
-        const SizedBox(height: 10),
-
-        // Member 1: Farhan (Anda)
-        _buildActiveMemberTile(
-          name: 'Farhan',
-          isSelf: true,
-          subtext: 'HP Diam di Meja • 0.0° kemiringan',
-          statusPill: _buildPill('● Aman', const Color(0xFF6EE7B7), const Color(0xFF064E3B)),
-          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-          dotColor: const Color(0xFF10B981),
-        ),
-        const SizedBox(height: 8),
-
-        // Member 2: Rizky R.
-        _buildActiveMemberTile(
-          name: 'Rizky R.',
-          subtext: 'Stabil di Meja Belajar',
-          statusPill: _buildPill('✓ 34m Tetap', const Color(0xFF6EE7B7), const Color(0xFF064E3B)),
-          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
-          dotColor: const Color(0xFF10B981),
-        ),
-        const SizedBox(height: 8),
-
-        // Member 3: Nabila P.
-        _buildActiveMemberTile(
-          name: 'Nabila P.',
-          subtext: 'Travel Mode (Gyro OK)',
-          statusPill: _buildPill('🚆 Mobil', const Color(0xFFDBEAFE), const Color(0xFF1D4ED8)),
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-          dotColor: const Color(0xFF6366F1),
-        ),
-        const SizedBox(height: 8),
-
-        // Member 4: Budi Santoso
-        _buildActiveMemberTile(
-          name: 'Budi Santoso',
-          subtext: 'Reconnecting (42s)... Mencari sinyal',
-          statusPill: _buildPill('🔄 Menunggu', const Color(0xFFFED7AA), const Color(0xFF9A3412)),
-          initials: 'BS',
-          dotColor: const Color(0xFFF59E0B),
-        ),
-      ],
+        );
+      },
     );
   }
 
