@@ -6,6 +6,7 @@ import '../widgets/studypact_app_bar.dart';
 import '../widgets/app_avatar.dart';
 import '../services/sensor_service.dart';
 import '../services/room_service.dart';
+import '../models/room_model.dart';
 import 'incident_screen.dart';
 import 'late_joiner_screen.dart';
 import 'riwayat_log_screen.dart';
@@ -14,11 +15,15 @@ import 'active_session_screen.dart';
 class RuangSesiScreen extends StatefulWidget {
   final VoidCallback onOpenHistory;
   final VoidCallback onOpenProfile;
+  final VoidCallback? onCreateRoom;
+  final VoidCallback? onJoinCode;
 
   const RuangSesiScreen({
     super.key,
     required this.onOpenHistory,
     required this.onOpenProfile,
+    this.onCreateRoom,
+    this.onJoinCode,
   });
 
   @override
@@ -27,11 +32,14 @@ class RuangSesiScreen extends StatefulWidget {
 
 class _RuangSesiScreenState extends State<RuangSesiScreen> {
   final PhoneMotionService _sensorService = PhoneMotionService();
+  final RoomService _roomService = RoomService();
   StreamSubscription<SensorReading>? _sensorSub;
+  StreamSubscription<String>? _alertSub;
   double _sensorX = 0.2;
   double _sensorY = 0.1;
   bool _travelModeEnabled = false;
   int _calibrationCountdown = 3;
+  bool _isNavigatingToSession = false;
 
   @override
   void initState() {
@@ -45,11 +53,47 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
         });
       }
     });
+
+    _roomService.addListener(_onRoomServiceChanged);
+
+    _alertSub = _roomService.distractionAlertStream.listen((msg) {
+      if (mounted) {
+        HapticFeedback.mediumImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            backgroundColor: const Color(0xFFDC2626),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+  }
+
+  void _onRoomServiceChanged() {
+    if (!mounted) return;
+    final room = _roomService.currentRoom;
+    if (room != null && room.isSessionActive && !_isNavigatingToSession) {
+      _isNavigatingToSession = true;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ActiveSessionScreen(
+            totalMinutes: room.durationMinutes,
+            roomTitle: room.title,
+          ),
+        ),
+      ).then((_) {
+        _isNavigatingToSession = false;
+      });
+    }
   }
 
   @override
   void dispose() {
     _sensorSub?.cancel();
+    _alertSub?.cancel();
+    _roomService.removeListener(_onRoomServiceChanged);
     super.dispose();
   }
 
@@ -164,129 +208,234 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              StudyPactAppBar(
-                subtitle: 'Ruang Sesi',
-                onProfileTap: widget.onOpenProfile,
-                onStreakTap: widget.onOpenHistory,
+        child: ListenableBuilder(
+          listenable: _roomService,
+          builder: (context, _) {
+            final currentRoom = _roomService.currentRoom;
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  StudyPactAppBar(
+                    subtitle: 'Ruang Sesi',
+                    onProfileTap: widget.onOpenProfile,
+                    onStreakTap: widget.onOpenHistory,
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: currentRoom == null
+                        ? _buildNoRoomState(context)
+                        : _buildActiveRoomView(context, currentRoom),
+                  ),
+                ],
               ),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Status Badges Row
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6EE7B7),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.circle, color: Color(0xFF065F46), size: 7),
-                              SizedBox(width: 5),
-                              Text(
-                                'LOBI AKTIF • MENUNGGU PESERTA',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF064E3B),
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE0F2FE),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.verified_user_rounded, color: Color(0xFF0284C7), size: 12),
-                              SizedBox(width: 4),
-                              Text(
-                                'Host: Farhan (Anda)',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF0369A1),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Room Title
-                    const Text(
-                      'Kerkom Algoritma Lanjut',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.textPrimary,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Kelompok 3 • Universitas Terbuka Komputasi',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Room Code Card
-                    _buildRoomCodeCard(context),
-                    const SizedBox(height: 20),
-
-                    // Anggota Terkoneksi (4 / 5 Kursi)
-                    _buildConnectedMembersSection(context),
-                    const SizedBox(height: 20),
-
-                    // Pemeriksaan Sensor Ponsel (3/3 Lolos)
-                    _buildSensorInspectionSection(),
-                    const SizedBox(height: 22),
-
-                    // Action Buttons (CTA)
-                    _buildActionButtons(context),
-                    const SizedBox(height: 24),
-
-                    // Demo / Showcase Navigation Card
-                    _buildDemoShortcuts(context),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildRoomCodeCard(BuildContext context) {
-    final currentRoom = RoomService().currentRoom;
-    final roomCode = currentRoom?.code ?? 'PACT-7492';
-    final durationMinutes = currentRoom?.durationMinutes ?? 45;
+  Widget _buildNoRoomState(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppTheme.cardBorder),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 68,
+                height: 68,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0xFFECFDF5),
+                ),
+                child: const Icon(Icons.meeting_room_outlined, color: Color(0xFF047857), size: 34),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Belum Ada Ruang Aktif',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Buka ruang baru sebagai Host atau masukkan kode PACT untuk belajar fokus bersama rekan Anda secara online.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: AppTheme.textMuted, height: 1.4),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: widget.onCreateRoom,
+                      icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                      label: const Text('Buat Ruang', style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF047857),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: widget.onJoinCode,
+                      icon: const Icon(Icons.pin_rounded, size: 18, color: Color(0xFF0284C7)),
+                      label: const Text('Gabung Kode', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF0284C7))),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFBAE6FD)),
+                        backgroundColor: const Color(0xFFF0F9FF),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        _buildSensorInspectionSection(),
+        const SizedBox(height: 20),
+        _buildDemoShortcuts(context),
+        const SizedBox(height: 32),
+      ],
+    );
+  }
+
+  Widget _buildActiveRoomView(BuildContext context, StudyRoom currentRoom) {
+    final currentUserId = _roomService.currentUser?.id;
+    final isHost = currentRoom.leaderId == currentUserId;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Status Badges Row
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: currentRoom.isSessionActive ? const Color(0xFFFEF3C7) : const Color(0xFF6EE7B7),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.circle,
+                    color: currentRoom.isSessionActive ? const Color(0xFFD97706) : const Color(0xFF065F46),
+                    size: 7,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    currentRoom.isSessionActive ? 'SESI SEDANG BERJALAN' : 'LOBI AKTIF • ONLINE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: currentRoom.isSessionActive ? const Color(0xFF92400E) : const Color(0xFF064E3B),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0F2FE),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.verified_user_rounded, color: Color(0xFF0284C7), size: 12),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Host: ${currentRoom.leaderName}${isHost ? ' (Anda)' : ''}',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0369A1),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // Room Title
+        Text(
+          currentRoom.title,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            color: AppTheme.textPrimary,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Kode: ${currentRoom.code} • Durasi Target: ${currentRoom.durationMinutes} Menit',
+          style: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.textMuted,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Room Code Card
+        _buildRoomCodeCard(context, currentRoom),
+        const SizedBox(height: 20),
+
+        // Anggota Terkoneksi (Real-time Firebase)
+        _buildConnectedMembersSection(context, currentRoom),
+        const SizedBox(height: 20),
+
+        // Pemeriksaan Sensor Ponsel
+        _buildSensorInspectionSection(),
+        const SizedBox(height: 22),
+
+        // Action Buttons (CTA)
+        _buildActionButtons(context),
+        const SizedBox(height: 24),
+
+        // Demo / Showcase Navigation Card
+        _buildDemoShortcuts(context),
+        const SizedBox(height: 32),
+      ],
+    );
+  }
+
+  Widget _buildRoomCodeCard(BuildContext context, StudyRoom currentRoom) {
+    final roomCode = currentRoom.code;
+    final durationMinutes = currentRoom.durationMinutes;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -304,7 +453,7 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'KODE RUANG PACT',
+                      'KODE RUANG PACT (BAGIKAN KE TEMAN)',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
@@ -317,7 +466,7 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
@@ -326,10 +475,10 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
                     Text(
                       roomCode,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.w900,
                         color: Color(0xFF1E1B4B),
-                        letterSpacing: 0.8,
+                        letterSpacing: 1.0,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -393,7 +542,7 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
                           ),
                         ),
                         const Text(
-                          'Standar No-Break',
+                          'Standar Sesi',
                           style: TextStyle(
                             fontSize: 9.5,
                             fontWeight: FontWeight.w500,
@@ -420,7 +569,7 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
                 SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Sensor giroskop akan memantau kemiringan & getaran ponsel otomatis.',
+                    'Pergerakan sensor ponsel setiap peserta tersinkronisasi otomatis via Firebase.',
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w500,
@@ -436,7 +585,10 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
     );
   }
 
-  Widget _buildConnectedMembersSection(BuildContext context) {
+  Widget _buildConnectedMembersSection(BuildContext context, StudyRoom currentRoom) {
+    final currentUserId = _roomService.currentUser?.id;
+    final members = currentRoom.members;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -448,7 +600,7 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
                 Icon(Icons.group_outlined, size: 18, color: Color(0xFF312E81)),
                 SizedBox(width: 8),
                 Text(
-                  'Anggota Terkoneksi',
+                  'Anggota Terkoneksi (Real-time)',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w900,
@@ -463,9 +615,9 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
                 color: const Color(0xFFEEF2FF),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                '4 / 5 Kursi',
-                style: TextStyle(
+              child: Text(
+                '${members.length} Peserta Aktif',
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF4F46E5),
@@ -476,130 +628,36 @@ class _RuangSesiScreenState extends State<RuangSesiScreen> {
         ),
         const SizedBox(height: 12),
 
-        // Member 1: Farhan (Anda)
-        _buildMemberCard(
-          name: 'Farhan',
-          isSelf: true,
-          status: '● Siap (Meja Rata) • Sensor 0.4°',
-          statusColor: const Color(0xFF10B981),
-          imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-          badgeWidget: _buildTag(
-            icon: Icons.shield_rounded,
-            label: '100%',
-            bg: const Color(0xFFDCFCE7),
-            textColor: const Color(0xFF15803D),
-          ),
-        ),
-        const SizedBox(height: 8),
+        // Dynamic Members List from Firebase
+        for (final member in members) ...[
+          () {
+            final isSelf = member.id == currentUserId;
+            final isLifted = member.status == MemberStatus.phoneLifted;
+            final statusText = isLifted
+                ? '🚨 HP Terangkat! (${member.distractionCount}x gangguan)'
+                : isSelf
+                    ? '● Siap di Meja • Tilt $_sensorX°'
+                    : '● Siap di Meja Belajar';
+            final statusColor = isLifted ? const Color(0xFFEF4444) : const Color(0xFF10B981);
 
-        // Member 2: Rizky Ramadhan
-        _buildMemberCard(
-          name: 'Rizky Ramadhan',
-          status: '● Siap (DND Aktif • Meja Rata)',
-          statusColor: const Color(0xFF10B981),
-          imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
-          badgeWidget: _buildTag(
-            icon: Icons.do_not_disturb_on_rounded,
-            label: 'DND',
-            bg: const Color(0xFFF1F5F9),
-            textColor: const Color(0xFF475569),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Member 3: Nabila Putri
-        _buildMemberCard(
-          name: 'Nabila Putri',
-          status: '● Siap (Mode Kereta 🚆)',
-          statusColor: const Color(0xFF10B981),
-          imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-          badgeWidget: _buildTag(
-            icon: Icons.train_outlined,
-            label: 'Toleran',
-            bg: const Color(0xFFFFEDD5),
-            textColor: const Color(0xFFC2410C),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Member 4: Dimas Arya
-        _buildMemberCard(
-          name: 'Dimas Arya',
-          status: '● Menghubungkan sensor...',
-          statusColor: const Color(0xFFF59E0B),
-          imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
-          badgeWidget: _buildTag(
-            icon: Icons.sync_rounded,
-            label: 'Kalibrasi',
-            bg: const Color(0xFFE0F2FE),
-            textColor: const Color(0xFF0369A1),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Member 5: Slot Kursi Kosong
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE2E8F0), style: BorderStyle.solid),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0xFFF1F5F9),
-                ),
-                child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF94A3B8), size: 20),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Slot Kursi 5 Kosong',
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'Menunggu via kode PACT-7492',
-                      style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                    ),
-                  ],
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: _buildMemberCard(
+                name: member.name,
+                isSelf: isSelf,
+                status: statusText,
+                statusColor: statusColor,
+                imageUrl: member.avatarUrl,
+                badgeWidget: _buildTag(
+                  icon: member.isLeader ? Icons.star_rounded : Icons.person_rounded,
+                  label: member.isLeader ? 'Host' : 'Peserta',
+                  bg: member.isLeader ? const Color(0xFFDCFCE7) : const Color(0xFFEEF2FF),
+                  textColor: member.isLeader ? const Color(0xFF15803D) : const Color(0xFF4F46E5),
                 ),
               ),
-              OutlinedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Tautan undangan telah disalin!')),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEEF2FF),
-                  side: BorderSide.none,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                ),
-                child: const Text(
-                  'Undang',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF4F46E5),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+            );
+          }(),
+        ],
       ],
     );
   }

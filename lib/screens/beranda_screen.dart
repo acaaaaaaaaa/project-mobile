@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/studypact_app_bar.dart';
 import '../widgets/app_avatar.dart';
+import '../services/room_service.dart';
 
 class BerandaScreen extends StatelessWidget {
   final VoidCallback onOpenLobby;
@@ -21,83 +22,90 @@ class BerandaScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final roomService = RoomService();
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              StudyPactAppBar(
-                subtitle: 'Beranda',
-                onProfileTap: onOpenProfile,
-                onStreakTap: onOpenHistory,
+        child: ListenableBuilder(
+          listenable: roomService,
+          builder: (context, _) {
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  StudyPactAppBar(
+                    subtitle: 'Beranda',
+                    onProfileTap: onOpenProfile,
+                    onStreakTap: onOpenHistory,
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Greeting & Status Pill
+                        _buildGreetingHeader(roomService.userName),
+                        const SizedBox(height: 18),
+
+                        // Level & Streak Card
+                        _buildLevelProgressCard(),
+                        const SizedBox(height: 18),
+
+                        // Study Invitation Card (Undangan Mabar Study)
+                        _buildInvitationCard(context),
+                        const SizedBox(height: 18),
+
+                        // Action Grid (Buat Ruang & Gabung Kode)
+                        _buildActionGrid(context),
+                        const SizedBox(height: 20),
+
+                        // Kalender Fokus
+                        _buildCalendarCard(),
+                        const SizedBox(height: 22),
+
+                        // Teman Belajar Aktif
+                        _buildActiveFriendsSection(context),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Greeting & Status Pill
-                    _buildGreetingHeader(),
-                    const SizedBox(height: 18),
-
-                    // Level & Streak Card
-                    _buildLevelProgressCard(),
-                    const SizedBox(height: 18),
-
-                    // Study Invitation Card (Undangan Mabar Study)
-                    _buildInvitationCard(context),
-                    const SizedBox(height: 18),
-
-                    // Action Grid (Buat Ruang & Gabung Kode)
-                    _buildActionGrid(context),
-                    const SizedBox(height: 20),
-
-                    // Kalender Fokus
-                    _buildCalendarCard(),
-                    const SizedBox(height: 22),
-
-                    // Teman Belajar Aktif
-                    _buildActiveFriendsSection(context),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildGreetingHeader() {
+  Widget _buildGreetingHeader(String userName) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Text(
-                  'Halo, Farhan!',
-                  style: TextStyle(
+                  'Halo, $userName!',
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                     color: AppTheme.textPrimary,
                     letterSpacing: -0.5,
                   ),
                 ),
-                SizedBox(width: 6),
-                Text('👋', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 6),
+                const Text('👋', style: TextStyle(fontSize: 20)),
               ],
             ),
-            SizedBox(height: 4),
-            Text(
+            const SizedBox(height: 4),
+            const Text(
               'Siap kunci distraksi hari ini?',
               style: TextStyle(
                 fontSize: 13,

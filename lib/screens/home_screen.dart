@@ -111,13 +111,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () {
-                      _roomService.createRoom(
-                        leaderName: 'Farhan (Anda)',
+                    onPressed: () async {
+                      await _roomService.createRoom(
+                        leaderName: _roomService.userName,
                         title: titleController.text,
                         durationMinutes: selectedDuration,
                       );
-                      Navigator.pop(ctx);
+                      if (ctx.mounted) Navigator.pop(ctx);
                       _switchTab(1); // Go to Ruang Sesi Lobby
                     },
                     style: ElevatedButton.styleFrom(
@@ -140,80 +140,113 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showJoinCodeDialog() {
-    final codeController = TextEditingController(text: 'PACT-7492');
+    final codeController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (ctx) {
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-          child: Padding(
-            padding: const EdgeInsets.all(22.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Gabung via Kode Ruang',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Masukkan kode PIN atau ID ruang belajar rekanmu (contoh: PACT-8821).',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: codeController,
-                  textCapitalization: TextCapitalization.characters,
-                  decoration: InputDecoration(
-                    hintText: 'PACT-xxxx',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    prefixIcon: const Icon(Icons.pin_rounded, color: Color(0xFF0284C7)),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
+        bool isLoading = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              child: Padding(
+                padding: const EdgeInsets.all(22.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: const Text('Batal', style: TextStyle(fontWeight: FontWeight.w700)),
+                    const Text(
+                      'Gabung via Kode Ruang',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Masukkan kode PIN atau ID ruang belajar rekanmu (contoh: PACT-8821).',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: codeController,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: InputDecoration(
+                        hintText: 'PACT-xxxx',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        prefixIcon: const Icon(Icons.pin_rounded, color: Color(0xFF0284C7)),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _roomService.joinRoom(
-                            memberName: 'Farhan',
-                            roomCode: codeController.text,
-                          );
-                          Navigator.pop(ctx);
-                          _switchTab(1); // Go to Ruang Sesi Lobby
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF047857),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            style: OutlinedButton.styleFrom(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text('Batal', style: TextStyle(fontWeight: FontWeight.w700)),
+                          ),
                         ),
-                        child: const Text(
-                          'Gabung Lobi',
-                          style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isLoading
+                                ? null
+                                : () async {
+                                    if (codeController.text.trim().isEmpty) return;
+                                    setDialogState(() {
+                                      isLoading = true;
+                                    });
+                                    final success = await _roomService.joinRoom(
+                                      memberName: _roomService.userName,
+                                      roomCode: codeController.text,
+                                    );
+                                    if (!success) {
+                                      setDialogState(() {
+                                        isLoading = false;
+                                      });
+                                      if (ctx.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Room "${codeController.text.toUpperCase()}" tidak ditemukan di server online!',
+                                            ),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                      return;
+                                    }
+                                    if (ctx.mounted) Navigator.pop(ctx);
+                                    _switchTab(1); // Go to Ruang Sesi Lobby
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF047857),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : const Text(
+                                    'Gabung Lobi',
+                                    style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
+                                  ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -232,6 +265,8 @@ class _HomeScreenState extends State<HomeScreen> {
       RuangSesiScreen(
         onOpenHistory: () => _switchTab(2),
         onOpenProfile: () => _switchTab(3),
+        onCreateRoom: _showCreateRoomDialog,
+        onJoinCode: _showJoinCodeDialog,
       ),
       RiwayatLogScreen(
         onBackToHome: () => _switchTab(0),

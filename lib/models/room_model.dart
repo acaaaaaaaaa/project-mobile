@@ -81,6 +81,7 @@ class StudyRoom {
   final String code;
   final String title;
   final String leaderId;
+  final String leaderName;
   final int durationMinutes;
   final DateTime createdAt;
   bool isSessionActive;
@@ -91,6 +92,7 @@ class StudyRoom {
     required this.code,
     required this.title,
     required this.leaderId,
+    this.leaderName = 'Ketua Kelompok',
     required this.durationMinutes,
     required this.createdAt,
     this.isSessionActive = false,
@@ -109,6 +111,7 @@ class StudyRoom {
       'code': code,
       'title': title,
       'leaderId': leaderId,
+      'leaderName': leaderName,
       'durationMinutes': durationMinutes,
       'createdAt': createdAt.toIso8601String(),
       'isSessionActive': isSessionActive,
@@ -138,6 +141,7 @@ class StudyRoom {
       code: map['code']?.toString() ?? '',
       title: map['title']?.toString() ?? 'Ruang Belajar',
       leaderId: map['leaderId']?.toString() ?? '',
+      leaderName: map['leaderName']?.toString() ?? 'Ketua Kelompok',
       durationMinutes: (map['durationMinutes'] as num?)?.toInt() ?? 45,
       createdAt: map['createdAt'] != null
           ? DateTime.tryParse(map['createdAt'].toString()) ?? DateTime.now()

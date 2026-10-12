@@ -21,6 +21,12 @@ class RoomService extends ChangeNotifier {
   Timer? _studyTimer;
   int _remainingSeconds = 0;
 
+  String _userName = 'Mahasiswa';
+  int _userLevel = 1;
+  int _userXp = 0;
+  int _streakDays = 1;
+  StreamSubscription? _userSub;
+
   StreamSubscription? _membersSub;
   StreamSubscription? _roomSub;
   StreamSubscription? _alertsSub;
@@ -34,10 +40,77 @@ class RoomService extends ChangeNotifier {
   int get remainingSeconds => _remainingSeconds;
   bool get isSessionRunning => _currentRoom?.isSessionActive ?? false;
 
+  String get userName => _userName;
+  int get userLevel => _userLevel;
+  int get userXp => _userXp;
+  int get streakDays => _streakDays;
+
   String get formattedTimer {
     final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
     final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
+  }
+
+  /// Inisialisasi profil pengguna dari Firebase
+  Future<void> loadUserProfile() async {
+    final uid = _firebaseService.currentUserId;
+    try {
+      final profile = await _firebaseService.getUserProfile(uid);
+      if (profile != null) {
+        _userName = profile['name']?.toString() ?? 'Mahasiswa';
+        _userLevel = (profile['level'] as num?)?.toInt() ?? 1;
+        _userXp = (profile['xp'] as num?)?.toInt() ?? 0;
+        _streakDays = (profile['streakDays'] as num?)?.toInt() ?? 1;
+      } else {
+        await _firebaseService.saveUserProfile(
+          userId: uid,
+          name: _userName,
+          level: _userLevel,
+          xp: _userXp,
+          streakDays: _streakDays,
+        );
+      }
+      
+      _userSub?.cancel();
+      _userSub = _firebaseService.watchUserProfile(uid).listen((event) {
+        if (event.snapshot.exists && event.snapshot.value is Map) {
+          final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+          _userName = data['name']?.toString() ?? _userName;
+          _userLevel = (data['level'] as num?)?.toInt() ?? _userLevel;
+          _userXp = (data['xp'] as num?)?.toInt() ?? _userXp;
+          _streakDays = (data['streakDays'] as num?)?.toInt() ?? _streakDays;
+          notifyListeners();
+        }
+      });
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+    }
+  }
+
+  /// Ubah nama pengguna dan sinkronkan ke Firebase
+  Future<void> updateUserName(String newName) async {
+    if (newName.trim().isEmpty) return;
+    _userName = newName.trim();
+    final uid = _firebaseService.currentUserId;
+    await _firebaseService.saveUserProfile(
+      userId: uid,
+      name: _userName,
+    );
+    if (_currentUser != null) {
+      _currentUser = Member(
+        id: _currentUser!.id,
+        name: _userName,
+        isLeader: _currentUser!.isLeader,
+        status: _currentUser!.status,
+        avatarUrl: _currentUser!.avatarUrl,
+        distractionCount: _currentUser!.distractionCount,
+      );
+      if (_currentRoom != null) {
+        _firebaseService.joinRoom(_currentRoom!.code, _currentUser!);
+      }
+    }
+    notifyListeners();
   }
 
   /// Membuat Ruang Belajar Baru (sebagai Host / Leader)
@@ -48,41 +121,30 @@ class RoomService extends ChangeNotifier {
   }) async {
     _closeSubscriptions();
 
-    final leaderId = _currentUser?.id ?? _uuid.v4();
+    final actualName = leaderName.trim().isNotEmpty ? leaderName.trim() : _userName;
+    _userName = actualName;
+    final leaderId = _firebaseService.currentUserId;
     final roomCode = 'PACT-${Random().nextInt(9000) + 1000}';
 
     _currentUser = Member(
       id: leaderId,
-      name: leaderName.isEmpty ? 'Farhan (Anda)' : leaderName,
+      name: actualName,
       isLeader: true,
       status: MemberStatus.focusing,
       avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
     );
 
+    // Hanya anggota nyata (Host), TIDAK ADA DUMMY MEMBER!
     _currentRoom = StudyRoom(
       id: _uuid.v4(),
       code: roomCode,
-      title: title.isEmpty ? 'Kerkom Algoritma Lanjut' : title,
+      title: title.trim().isNotEmpty ? title.trim() : 'Ruang Belajar Bersama',
       leaderId: leaderId,
+      leaderName: actualName,
       durationMinutes: durationMinutes,
       createdAt: DateTime.now(),
       members: [
         _currentUser!,
-        // Rekan kelompok default untuk mensimulasikan lingkungan room yang ramai
-        Member(
-          id: 'mock-rizky',
-          name: 'Rizky Ramadhan',
-          isLeader: false,
-          status: MemberStatus.focusing,
-          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
-        ),
-        Member(
-          id: 'mock-nabila',
-          name: 'Nabila Putri',
-          isLeader: false,
-          status: MemberStatus.focusing,
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-        ),
       ],
     );
 
@@ -92,7 +154,7 @@ class RoomService extends ChangeNotifier {
     // 1. Simpan profil user ke Firebase
     _firebaseService.saveUserProfile(
       userId: leaderId,
-      name: _currentUser!.name,
+      name: actualName,
     );
 
     // 2. Simpan room ke Firebase Realtime Database
@@ -100,7 +162,7 @@ class RoomService extends ChangeNotifier {
       await _firebaseService.createRoom(_currentRoom!, _currentUser!);
       _setupFirebaseRoomListeners(roomCode);
     } catch (e) {
-      debugPrint('Fallback local room karena Firebase error: $e');
+      debugPrint('Error create room di Firebase: $e');
     }
 
     return _currentRoom!;
@@ -114,47 +176,52 @@ class RoomService extends ChangeNotifier {
     _closeSubscriptions();
 
     final cleanCode = roomCode.trim().toUpperCase();
-    final memberId = _currentUser?.id ?? _uuid.v4();
+    final actualName = memberName.trim().isNotEmpty ? memberName.trim() : _userName;
+    _userName = actualName;
+    final memberId = _firebaseService.currentUserId;
+
+    // 1. Cek terlebih dahulu apakah Room benar-benar ada di Firebase
+    final liveRoom = await _firebaseService.getRoom(cleanCode);
+    if (liveRoom == null) {
+      debugPrint('Room dengan kode $cleanCode tidak ditemukan di server Firebase.');
+      return false;
+    }
 
     _currentUser = Member(
       id: memberId,
-      name: memberName.isEmpty ? 'Anggota' : memberName,
-      isLeader: false,
+      name: actualName,
+      isLeader: liveRoom.leaderId == memberId,
       status: MemberStatus.focusing,
       avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
     );
 
-    // Default room template saat proses sinkronisasi
-    _currentRoom = StudyRoom(
-      id: _uuid.v4(),
-      code: cleanCode,
-      title: 'Ruang Belajar Bersama',
-      leaderId: 'host-leader',
-      durationMinutes: 45,
-      createdAt: DateTime.now(),
-      members: [
-        Member(id: 'host-leader', name: 'Ketua Kelompok', isLeader: true),
-        _currentUser!,
-      ],
-    );
+    _currentRoom = liveRoom;
+    _remainingSeconds = liveRoom.durationMinutes * 60;
 
-    _remainingSeconds = 45 * 60;
+    // Pastikan user sendiri ada di daftar members
+    final existingIdx = _currentRoom!.members.indexWhere((m) => m.id == memberId);
+    if (existingIdx >= 0) {
+      _currentRoom!.members[existingIdx] = _currentUser!;
+    } else {
+      _currentRoom!.members.add(_currentUser!);
+    }
     notifyListeners();
 
-    // 1. Simpan profil pengguna ke Firebase
+    // 2. Simpan profil pengguna ke Firebase
     _firebaseService.saveUserProfile(
       userId: memberId,
-      name: _currentUser!.name,
+      name: actualName,
     );
 
-    // 2. Kirim data diri ke Firebase node /rooms/$cleanCode/members/$memberId
+    // 3. Masukkan ke daftar member room di Firebase
     try {
       final joined = await _firebaseService.joinRoom(cleanCode, _currentUser!);
       if (joined) {
         _setupFirebaseRoomListeners(cleanCode);
+        return true;
       }
     } catch (e) {
-      debugPrint('Koneksi Firebase offline, tetap jalan di mode lokal: $e');
+      debugPrint('Koneksi join room ke Firebase error: $e');
     }
 
     return true;
@@ -178,14 +245,14 @@ class RoomService extends ChangeNotifier {
           }
         });
 
-        if (liveMembers.isNotEmpty && _currentRoom != null) {
+        if (_currentRoom != null) {
           _currentRoom!.members = liveMembers;
           notifyListeners();
         }
       }
     });
 
-    // 2. Dengar pembaruan room (status sesi aktif & waktu)
+    // 2. Dengar pembaruan room (status sesi aktif & waktu & judul)
     _roomSub = _firebaseService.watchRoom(roomCode).listen((event) {
       if (event.snapshot.exists && event.snapshot.value is Map) {
         final data = Map<String, dynamic>.from(event.snapshot.value as Map);
@@ -194,14 +261,24 @@ class RoomService extends ChangeNotifier {
           if (_currentRoom!.isSessionActive != isNowActive) {
             _currentRoom!.isSessionActive = isNowActive;
             if (isNowActive && !(_sensorService.isMonitoring)) {
-              // Jika Host memulai sesi, otomatis aktifkan sensor di HP anggota juga!
+              // Jika Host memulai sesi, otomatis aktifkan pemantauan di HP anggota juga!
               _startLocalMonitoring();
             } else if (!isNowActive && _sensorService.isMonitoring) {
               stopSession();
             }
           }
-          if (data['title'] != null) {
-            // Judul room disinkronkan dari Host
+          if (data['title'] != null || data['leaderName'] != null) {
+            _currentRoom = StudyRoom(
+              id: _currentRoom!.id,
+              code: _currentRoom!.code,
+              title: data['title']?.toString() ?? _currentRoom!.title,
+              leaderId: data['leaderId']?.toString() ?? _currentRoom!.leaderId,
+              leaderName: data['leaderName']?.toString() ?? _currentRoom!.leaderName,
+              durationMinutes: (data['durationMinutes'] as num?)?.toInt() ?? _currentRoom!.durationMinutes,
+              createdAt: _currentRoom!.createdAt,
+              isSessionActive: _currentRoom!.isSessionActive,
+              members: _currentRoom!.members,
+            );
           }
           notifyListeners();
         }
@@ -333,7 +410,7 @@ class RoomService extends ChangeNotifier {
     }
   }
 
-  /// Trigger simulasi angkat HP secara manual (sangat praktis untuk demonstrasi di Android Emulator)
+  /// Trigger simulasi angkat HP secara manual (praktis untuk uji coba)
   void triggerManualLiftSimulation() {
     final isCurrentlyLifted = _sensorService.isPhoneLifted;
     _sensorService.simulatePhoneLift(!isCurrentlyLifted);
@@ -377,6 +454,7 @@ class RoomService extends ChangeNotifier {
   void dispose() {
     stopSession();
     _closeSubscriptions();
+    _userSub?.cancel();
     _sensorService.stopMonitoring();
     _distractionAlertController.close();
     super.dispose();

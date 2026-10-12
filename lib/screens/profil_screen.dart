@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/studypact_app_bar.dart';
 import '../widgets/app_avatar.dart';
+import '../services/room_service.dart';
 
 class ProfilScreen extends StatelessWidget {
   final VoidCallback onOpenHistory;
@@ -11,96 +12,174 @@ class ProfilScreen extends StatelessWidget {
     required this.onOpenHistory,
   });
 
+  void _showEditNameDialog(BuildContext context, RoomService roomService) {
+    final controller = TextEditingController(text: roomService.userName);
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Ubah Nama Profil', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Nama ini akan ditampilkan ke rekan belajar Anda di dalam ruang sesi online.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Nama Lengkap / Panggilan',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (controller.text.trim().isNotEmpty) {
+                  await roomService.updateUserName(controller.text.trim());
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Nama profil berhasil diperbarui di Firebase!')),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF047857),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final roomService = RoomService();
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              StudyPactAppBar(
-                subtitle: 'Profil Pengguna',
-                onProfileTap: () {},
-                onStreakTap: onOpenHistory,
-              ),
+        child: ListenableBuilder(
+          listenable: roomService,
+          builder: (context, _) {
+            final name = roomService.userName;
+            final xp = roomService.userXp;
+            final level = roomService.userLevel;
+            final streak = roomService.streakDays;
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Profile Header Card
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: AppTheme.cardBorder),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.02),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          const AppAvatar(
-                            name: 'Farhan',
-                            imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=160&q=80',
-                            size: 72,
-                            badge: CircleAvatar(
-                              radius: 12,
-                              backgroundColor: Color(0xFF047857),
-                              child: Icon(Icons.check_rounded, color: Colors.white, size: 14),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Farhan',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEEF2FF),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              'Tier 14 • Focus Master',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF4F46E5),
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  StudyPactAppBar(
+                    subtitle: 'Profil Pengguna',
+                    onProfileTap: () {},
+                    onStreakTap: onOpenHistory,
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Profile Header Card
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: AppTheme.cardBorder),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.02),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 3 Stats
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _buildStatItem('7 Hari', 'Streak Aktif', '🔥'),
-                              Container(height: 30, width: 1, color: const Color(0xFFE2E8F0)),
-                              _buildStatItem('32.4 Jam', 'Waktu Fokus', '⏱'),
-                              Container(height: 30, width: 1, color: const Color(0xFFE2E8F0)),
-                              _buildStatItem('98.2%', 'Kepatuhan', '🛡'),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                          child: Column(
+                            children: [
+                              AppAvatar(
+                                name: name,
+                                imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=160&q=80',
+                                size: 72,
+                                badge: const CircleAvatar(
+                                  radius: 12,
+                                  backgroundColor: Color(0xFF047857),
+                                  child: Icon(Icons.check_rounded, color: Colors.white, size: 14),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF0284C7)),
+                                    onPressed: () => _showEditNameDialog(context, roomService),
+                                    tooltip: 'Ubah Nama',
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEEF2FF),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'Level $level • $xp XP Terkumpul',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF4F46E5),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 3 Stats
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  _buildStatItem('$streak Hari', 'Streak Aktif', '🔥'),
+                                  Container(height: 30, width: 1, color: const Color(0xFFE2E8F0)),
+                                  _buildStatItem('$xp XP', 'Skor Fokus', '⚡'),
+                                  Container(height: 30, width: 1, color: const Color(0xFFE2E8F0)),
+                                  _buildStatItem('Tingkat $level', 'Peringkat', '🛡'),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
 
                     // Preferences & Sensor Settings
                     Container(
@@ -197,10 +276,12 @@ class ProfilScreen extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
+        );
+      },
+    ),
+  ),
+);
+}
 
   Widget _buildStatItem(String val, String label, String emoji) {
     return Column(

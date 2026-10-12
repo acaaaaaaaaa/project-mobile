@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
@@ -15,6 +16,9 @@ class FirebaseRealtimeService {
   bool _isInitialized = false;
 
   bool get isInitialized => _isInitialized;
+
+  String get currentUserId => FirebaseAuth.instance.currentUser?.uid ?? 'user-local';
+
   FirebaseDatabase get db {
     if (_database == null) {
       _database = FirebaseDatabase.instanceFor(
@@ -31,13 +35,27 @@ class FirebaseRealtimeService {
     return _database!;
   }
 
-  /// Inisialisasi koneksi Firebase Database
+  /// Inisialisasi koneksi Firebase Database dan Auth
   Future<void> initialize() async {
     try {
       _database = FirebaseDatabase.instanceFor(
         app: Firebase.app(),
         databaseURL: databaseUrl,
       );
+      try {
+        _database!.setPersistenceEnabled(true);
+      } catch (_) {}
+
+      // Login anonim agar terdaftar sebagai pengguna resmi di Firebase dan aturan database lolos
+      if (FirebaseAuth.instance.currentUser == null) {
+        try {
+          await FirebaseAuth.instance.signInAnonymously();
+          debugPrint('Firebase Auth anonim berhasil: ${FirebaseAuth.instance.currentUser?.uid}');
+        } catch (authError) {
+          debugPrint('Catatan Firebase Auth: $authError');
+        }
+      }
+
       _isInitialized = true;
       debugPrint('Firebase Realtime Database berhasil terhubung ke: $databaseUrl');
     } catch (e) {
@@ -54,21 +72,23 @@ class FirebaseRealtimeService {
   Future<void> saveUserProfile({
     required String userId,
     required String name,
-    int level = 14,
-    int xp = 840,
-    int streakDays = 7,
+    int? level,
+    int? xp,
+    int? streakDays,
   }) async {
     try {
       final userRef = db.ref('users/$userId');
-      await userRef.update({
+      final Map<String, Object?> updates = {
         'id': userId,
         'name': name,
-        'level': level,
-        'xp': xp,
-        'streakDays': streakDays,
         'lastActive': ServerValue.timestamp,
-      });
-      debugPrint('Data user $userId berhasil disimpan ke Firebase.');
+      };
+      if (level != null) updates['level'] = level;
+      if (xp != null) updates['xp'] = xp;
+      if (streakDays != null) updates['streakDays'] = streakDays;
+
+      await userRef.update(updates);
+      debugPrint('Data user $userId ($name) berhasil disimpan ke Firebase.');
     } catch (e) {
       debugPrint('Gagal menyimpan data user: $e');
     }
@@ -85,6 +105,34 @@ class FirebaseRealtimeService {
       debugPrint('Gagal mengambil data user: $e');
     }
     return null;
+  }
+
+  /// Stream perubahan data profil pengguna sendiri secara realtime
+  Stream<DatabaseEvent> watchUserProfile(String userId) {
+    return db.ref('users/$userId').onValue;
+  }
+
+  /// Ambil seluruh daftar pengguna untuk leaderboard online
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    try {
+      final snapshot = await db.ref('users').get();
+      if (snapshot.exists && snapshot.value is Map) {
+        final map = Map<String, dynamic>.from(snapshot.value as Map);
+        final list = <Map<String, dynamic>>[];
+        map.forEach((k, v) {
+          if (v is Map) {
+            final userMap = Map<String, dynamic>.from(v);
+            if (!userMap.containsKey('id')) userMap['id'] = k;
+            list.add(userMap);
+          }
+        });
+        list.sort((a, b) => ((b['xp'] ?? 0) as num).compareTo((a['xp'] ?? 0) as num));
+        return list;
+      }
+    } catch (e) {
+      debugPrint('Gagal mengambil daftar users: $e');
+    }
+    return [];
   }
 
   /// Simpan riwayat sesi belajar yang telah selesai (/session_logs/$userId/$logId)
@@ -109,10 +157,24 @@ class FirebaseRealtimeService {
       });
 
       // Tambahkan akumulasi XP ke profil pengguna
-      final userRef = db.ref('users/$userId/xp');
-      final currentXpSnap = await userRef.get();
-      final currentXp = (currentXpSnap.value as num?)?.toInt() ?? 840;
-      await userRef.set(currentXp + xpEarned);
+      final userRef = db.ref('users/$userId');
+      final userSnap = await userRef.get();
+      int currentXp = 0;
+      int currentStreak = 1;
+      if (userSnap.exists && userSnap.value is Map) {
+        final data = Map<String, dynamic>.from(userSnap.value as Map);
+        currentXp = (data['xp'] as num?)?.toInt() ?? 0;
+        currentStreak = (data['streakDays'] as num?)?.toInt() ?? 1;
+      }
+      final newXp = currentXp + xpEarned;
+      final newLevel = (newXp ~/ 100) + 1;
+
+      await userRef.update({
+        'xp': newXp,
+        'level': newLevel,
+        'streakDays': currentStreak,
+        'lastActive': ServerValue.timestamp,
+      });
 
       debugPrint('Sesi $roomCode berhasil dicatat ke riwayat log.');
     } catch (e) {
@@ -120,9 +182,43 @@ class FirebaseRealtimeService {
     }
   }
 
+  /// Ambil seluruh riwayat log sesi belajar milik user
+  Future<List<Map<String, dynamic>>> getSessionLogs(String userId) async {
+    try {
+      final snapshot = await db.ref('session_logs/$userId').get();
+      if (snapshot.exists && snapshot.value is Map) {
+        final map = Map<String, dynamic>.from(snapshot.value as Map);
+        final list = <Map<String, dynamic>>[];
+        map.forEach((k, v) {
+          if (v is Map) {
+            list.add(Map<String, dynamic>.from(v));
+          }
+        });
+        list.sort((a, b) => ((b['completedAt'] ?? 0) as num).compareTo((a['completedAt'] ?? 0) as num));
+        return list;
+      }
+    } catch (e) {
+      debugPrint('Gagal mengambil session logs: $e');
+    }
+    return [];
+  }
+
   // ==============================================================
   // 2. PENYEBARAN DATA & SINKRONISASI REALTIME (FITUR FOCUS / ROOM)
   // ==============================================================
+
+  /// Ambil detail Room dari Firebase (/rooms/$roomCode)
+  Future<StudyRoom?> getRoom(String roomCode) async {
+    try {
+      final snapshot = await db.ref('rooms/$roomCode').get();
+      if (snapshot.exists && snapshot.value is Map) {
+        return StudyRoom.fromMap(Map<String, dynamic>.from(snapshot.value as Map));
+      }
+    } catch (e) {
+      debugPrint('Gagal mengambil data room $roomCode: $e');
+    }
+    return null;
+  }
 
   /// Host membuat Room baru di Firebase (/rooms/$roomCode)
   Future<bool> createRoom(StudyRoom room, Member host) async {
@@ -145,7 +241,7 @@ class FirebaseRealtimeService {
       };
 
       await roomRef.set(roomData);
-      debugPrint('Room ${room.code} berhasil dibuat di Firebase.');
+      debugPrint('Room ${room.code} berhasil dibuat di Firebase oleh ${host.name}.');
       return true;
     } catch (e) {
       debugPrint('Gagal membuat room di Firebase: $e');
@@ -166,7 +262,7 @@ class FirebaseRealtimeService {
 
       // Masukkan data member ke node members
       await db.ref('rooms/$roomCode/members/${member.id}').set(member.toMap());
-      debugPrint('${member.name} berhasil bergabung ke room $roomCode.');
+      debugPrint('${member.name} (${member.id}) berhasil bergabung ke room $roomCode di Firebase.');
       return true;
     } catch (e) {
       debugPrint('Gagal join room di Firebase: $e');
@@ -271,3 +367,4 @@ class FirebaseRealtimeService {
     return db.ref('rooms/$roomCode/alerts').limitToLast(10).onChildAdded;
   }
 }
+

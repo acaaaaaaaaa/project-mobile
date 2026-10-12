@@ -43,8 +43,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> {
   @override
   void initState() {
     super.initState();
-    // Start with 34 minutes and 12 seconds like the mockup (or calculated from totalMinutes)
-    _remainingSeconds = 34 * 60 + 12;
+    _remainingSeconds = widget.totalMinutes * 60;
 
     _sensorService.startMonitoring(
       onLifted: (episode) => _handlePhoneLifted(),
@@ -575,44 +574,12 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> {
                   }(),
                 ),
             ] else ...[
-              // Member 1: Farhan (Anda)
               _buildActiveMemberTile(
-                name: 'Farhan',
+                name: '${_roomService.userName} (Anda)',
                 isSelf: true,
-                subtext: 'HP Diam di Meja • 0.0° kemiringan',
+                subtext: 'HP Diam di Meja • ${_pitch.abs().toStringAsFixed(1)}° kemiringan',
                 statusPill: _buildPill('● Aman', const Color(0xFF6EE7B7), const Color(0xFF064E3B)),
-                avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
                 dotColor: const Color(0xFF10B981),
-              ),
-              const SizedBox(height: 8),
-
-              // Member 2: Rizky R.
-              _buildActiveMemberTile(
-                name: 'Rizky R.',
-                subtext: 'Stabil di Meja Belajar',
-                statusPill: _buildPill('✓ 34m Tetap', const Color(0xFF6EE7B7), const Color(0xFF064E3B)),
-                avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
-                dotColor: const Color(0xFF10B981),
-              ),
-              const SizedBox(height: 8),
-
-              // Member 3: Nabila P.
-              _buildActiveMemberTile(
-                name: 'Nabila P.',
-                subtext: 'Travel Mode (Gyro OK)',
-                statusPill: _buildPill('🚆 Mobil', const Color(0xFFDBEAFE), const Color(0xFF1D4ED8)),
-                avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-                dotColor: const Color(0xFF6366F1),
-              ),
-              const SizedBox(height: 8),
-
-              // Member 4: Budi Santoso
-              _buildActiveMemberTile(
-                name: 'Budi Santoso',
-                subtext: 'Reconnecting (42s)... Mencari sinyal',
-                statusPill: _buildPill('🔄 Menunggu', const Color(0xFFFED7AA), const Color(0xFF9A3412)),
-                initials: 'BS',
-                dotColor: const Color(0xFFF59E0B),
               ),
             ],
           ],

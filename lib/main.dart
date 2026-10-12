@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'screens/home_screen.dart';
 import 'theme/app_theme.dart';
 import 'services/firebase_service.dart';
+import 'services/room_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,7 @@ Future<void> main() async {
 
     // Hubungkan instance Firebase Realtime Database asia-southeast1
     await FirebaseRealtimeService.instance.initialize();
+    await RoomService().loadUserProfile();
   } catch (error) {
     debugPrint('Inisialisasi Firebase Realtime Database info: $error');
   }
