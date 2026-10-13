@@ -1,0 +1,381 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/avatar_circle.dart';
+import '../../../core/widgets/destructive_outline_button.dart';
+import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/status_chip.dart';
+import '../presentation/room_controller.dart';
+
+class S07LobiScreen extends ConsumerWidget {
+  final String roomId;
+
+  const S07LobiScreen({super.key, required this.roomId});
+
+  void _showLeaveDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Keluar dari Lobi?'),
+        content: const Text(
+          'Jika Anda adalah host, hak kepemimpinan ruang akan dialihkan otomatis ke anggota berikutnya.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await ref.read(roomRepositoryProvider).leaveRoom(roomId);
+              if (context.mounted) context.go('/home');
+            },
+            child: const Text('Keluar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final roomAsync = ref.watch(activeRoomProvider(roomId));
+    final membersAsync = ref.watch(roomMembersProvider(roomId));
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+
+    ref.listen(activeRoomProvider(roomId), (prev, next) {
+      final room = next.value;
+      if (room != null && room.status == 'kalibrasi') {
+        context.go('/calibration/$roomId');
+      }
+    });
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          onPressed: () => _showLeaveDialog(context, ref),
+        ),
+        title: Text(
+          'Lobi Ruang',
+          style: AppTheme.headlineSmall.copyWith(fontWeight: FontWeight.w800),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: roomAsync.when(
+          data: (room) {
+            if (room == null || room.status == 'selesai') {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.info_outline_rounded, size: 48, color: AppColors.amber),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Ruang tidak ditemukan atau sesi telah selesai.',
+                        style: AppTheme.bodyLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      PrimaryButton(
+                        text: 'Kembali ke Beranda',
+                        onPressed: () => context.go('/home'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            final isHost = room.hostUid == currentUid;
+            final isSessionRunning = room.status == 'berjalan';
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Late Join Amber Banner (If status is 'berjalan')
+                  if (isSessionRunning) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.amberSoft,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.amber.withValues(alpha: 0.4)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.timer_outlined, color: AppColors.amber, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Sesi sedang berjalan (sisa ${(room.remainingSeconds ~/ 60)} menit)',
+                                  style: AppTheme.labelMedium.copyWith(color: AppColors.amber),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          PrimaryButton(
+                            text: 'Kalibrasi dan Masuk Sesi',
+                            onPressed: () => context.push('/calibration/$roomId'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Room Details Card
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'NAMA RUANG',
+                          style: AppTheme.labelSmall.copyWith(letterSpacing: 1.2, color: AppColors.textMuted),
+                        ),
+                        const SizedBox(height: 4),
+                        // Nama ruang ditampilkan persis seperti yang diketik
+                        Text(
+                          room.name,
+                          style: AppTheme.headlineMedium.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        Text(
+                          'KODE RUANG BELAJAR',
+                          style: AppTheme.labelSmall.copyWith(letterSpacing: 1.2, color: AppColors.textMuted),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Text(
+                              room.code,
+                              style: AppTheme.headlineLarge.copyWith(
+                                letterSpacing: 3,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              icon: const Icon(Icons.copy_rounded, color: AppColors.primary, size: 20),
+                              tooltip: 'Salin Kode',
+                              onPressed: () {
+                                Clipboard.setData(ClipboardData(text: room.code));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Kode ruang berhasil disalin ke clipboard!'),
+                                    backgroundColor: AppColors.green,
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.share_rounded, color: AppColors.primary, size: 20),
+                              tooltip: 'Bagikan Link',
+                              onPressed: () {
+                                SharePlus.instance.share(
+                                  ShareParams(
+                                    text: 'Yuk gabung sesi fokus kelompok "${room.name}" di Kerkom!\nhttps://kerkom.app/j/${room.code}',
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  Text(
+                    'ANGGOTA DI DALAM RUANG',
+                    style: AppTheme.labelSmall.copyWith(letterSpacing: 1.2, color: AppColors.textMuted),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Realtime Members List
+                  Expanded(
+                    child: membersAsync.when(
+                      data: (members) {
+                        return ListView.separated(
+                          itemCount: members.length,
+                          separatorBuilder: (_, index) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final member = members[index];
+                            final isMe = member.uid == currentUid;
+
+                            return AppCard(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Row(
+                                children: [
+                                  AvatarCircle(
+                                    name: member.name,
+                                    photoUrl: member.photoUrl,
+                                    size: 40,
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          member.name + (isMe ? ' (Anda)' : ''),
+                                          style: AppTheme.bodyLarge.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        Text(
+                                          member.isHost ? 'Pembuat Ruang' : 'Peserta',
+                                          style: AppTheme.bodySmall.copyWith(color: AppColors.textMuted),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (member.isHost)
+                                    const StatusChip(label: 'HOST', color: StatusChipColor.lime)
+                                  else
+                                    const StatusChip(label: 'Siap', color: StatusChipColor.green),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (err, _) => Center(child: Text('Error: $err', style: const TextStyle(color: AppColors.red))),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  if (isHost && !isSessionRunning) ...[
+                    PrimaryButton(
+                      text: 'Mulai Kalibrasi Bersama',
+                      icon: const Icon(Icons.sensors_rounded, size: 20, color: AppColors.onPrimary),
+                      onPressed: () async {
+                        await ref.read(roomRepositoryProvider).startCalibration(roomId);
+                        if (context.mounted) {
+                          context.push('/calibration/$roomId');
+                        }
+                      },
+                    ),
+                  ] else if (!isHost && !isSessionRunning) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Menunggu host memulai...',
+                            style: AppTheme.labelMedium.copyWith(color: AppColors.textMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 10),
+                  DestructiveOutlineButton(
+                    text: 'Keluar Lobi',
+                    onPressed: () => _showLeaveDialog(context, ref),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            );
+          },
+          loading: () => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Memuat informasi lobi...',
+                    style: AppTheme.bodyMedium.copyWith(color: AppColors.textMuted),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton.icon(
+                    onPressed: () => context.go('/home'),
+                    icon: const Icon(Icons.arrow_back, size: 16, color: AppColors.primary),
+                    label: const Text(
+                      'Kembali ke Beranda',
+                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          error: (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.red),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Gagal memuat ruang: $err',
+                    style: const TextStyle(color: AppColors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  PrimaryButton(
+                    text: 'Kembali ke Beranda',
+                    onPressed: () => context.go('/home'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

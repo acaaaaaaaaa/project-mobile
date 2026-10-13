@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;800;900&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100%;min-height:100vh;margin:0;padding:0;background-color:#111317;color:#e2e2e8;overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}.pl-safe{padding-left:env(safe-area-inset-left,0px);}.pr-safe{padding-right:env(safe-area-inset-right,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "tertiary": "#ffffff", "surface-container-high": "#282a2e", "surface-container": "#1e2024", "primary-fixed": "#c5f331", "on-tertiary-container": "#c31f29", "on-error-container": "#ffdad6", "surface-variant": "#333539", "on-secondary-container": "#b3b5be", "on-background": "#e2e2e8", "on-secondary-fixed-variant": "#44474f", "surface-container-lowest": "#0c0e12", "tertiary-fixed-dim": "#ffb3ae", "surface": "#111317", "on-surface": "#e2e2e8", "secondary": "#c4c6d0", "background": "#111317", "on-error": "#690005", "inverse-primary": "#506600", "surface-container-highest": "#333539", "tertiary-container": "#ffdad7", "on-tertiary-fixed-variant": "#930014", "on-secondary-fixed": "#191c22", "surface-container-low": "#1a1c20", "on-primary-fixed": "#161f00", "error": "#ffb4ab", "primary-fixed-dim": "#aad600", "tertiary-fixed": "#ffdad7", "secondary-fixed": "#e0e2ec", "on-surface-variant": "#c4c9ae", "on-primary": "#283500", "on-primary-fixed-variant": "#3b4d00", "on-secondary": "#2d3038", "primary-container": "#c5f331", "surface-bright": "#37393e", "inverse-on-surface": "#2f3035", "surface-tint": "#aad600", "secondary-fixed-dim": "#c4c6d0", "secondary-container": "#44474f", "primary": "#ffffff", "on-tertiary-fixed": "#410004", "on-primary-container": "#556d00", "outline-variant": "#444934", "surface-dim": "#111317", "outline": "#8e937a", "inverse-surface": "#e2e2e8", "error-container": "#93000a", "on-tertiary": "#68000b" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-sm": "0.5rem", "space-xl": "2rem", "gutter": "1rem", "space-xs": "0.25rem", "margin": "1.25rem", "space-md": "1rem", "space-lg": "1.5rem" }, "fontFamily": { "body-sm": ["Nunito Sans"], "label-md": ["Nunito Sans"], "headline-md": ["Nunito Sans"], "body-md": ["Nunito Sans"], "body-lg": ["Nunito Sans"], "headline-sm": ["Nunito Sans"], "timer-display": ["Nunito Sans"], "label-lg": ["Nunito Sans"], "label-sm": ["Nunito Sans"], "headline-lg": ["Nunito Sans"] }, "fontSize": { "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "600" }], "label-md": ["13px", { "lineHeight": "16px", "letterSpacing": "0.4px", "fontWeight": "800" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.3px", "fontWeight": "800" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "600" }], "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "800" }], "timer-display": ["64px", { "lineHeight": "72px", "letterSpacing": "-1.5px", "fontWeight": "900" }], "label-lg": ["16px", { "lineHeight": "20px", "fontWeight": "800" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.6px", "fontWeight": "800" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.5px", "fontWeight": "900" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl pt-safe"><div class="h-14 px-margin flex items-center justify-between"><button aria-label="Kembali" class="w-11 h-11 -ml-space-xs flex items-center justify-center rounded-lg text-on-surface hover:text-primary-fixed focus:outline-none transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight truncate max-w-[200px]">Session Setup</h1><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="flex-1 flex flex-col relative w-full px-margin pt-14 pb-safe bg-surface"><div class="flex flex-col w-full pb-8 space-y-4">
+<!-- Top Session Meta Bar -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center space-x-2">
+<span class="w-2 h-2 rounded-full bg-primary-fixed animate-ping"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Ruang Sinkronisasi</span>
+</div>
+<div class="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-surface-container-high text-on-surface">
+<span class="material-symbols-outlined text-[15px] text-primary-fixed">schedule</span>
+<span class="font-label-md text-label-md">45 menit</span>
+</div>
+</div>
+<!-- Title & Context -->
+<div class="flex flex-col space-y-1">
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight leading-tight">
+      Tugas Akhir HCI Kelompok 4
+    </h2>
+<p class="font-body-md text-body-md text-secondary">
+      Ruang Fokus Belajar Bersama
+    </p>
+</div>
+<!-- Late-Join Alert Notification -->
+<div class="p-3.5 rounded-xl bg-surface-container flex items-start space-x-3 shadow-sm">
+<div class="relative flex-shrink-0 mt-0.5">
+<span class="w-2.5 h-2.5 rounded-full bg-amber-400 block"></span>
+<span class="absolute inset-0 w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping opacity-75"></span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-amber-300">Sesi sedang berjalan • sisa 32 menit</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-secondary-container mt-0.5">
+        Kamu bergabung saat sesi telah dimulai. Bersiap untuk kalibrasi sensor meja.
+      </p>
+</div>
+</div>
+<!-- Room Code Tactile Card -->
+<div class="p-4 rounded-xl bg-surface-container flex flex-col space-y-3 shadow-md">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">KODE RUANG</span>
+<span class="font-body-sm text-body-sm text-secondary">kerkom.app/j/KRK-7K2Q</span>
+</div>
+<!-- Prominent Code Display -->
+<div class="py-2.5 px-3 bg-surface-container-lowest rounded-lg flex items-center justify-center">
+<span class="font-headline-lg text-headline-lg text-primary-fixed tracking-[0.25em] select-all font-black text-center pl-[0.25em]">
+        KRK-7K2Q
+      </span>
+</div>
+<!-- Quick Action Share/Copy Row -->
+<div class="grid grid-cols-2 gap-2 pt-1">
+<button class="h-11 px-3 rounded-lg bg-surface-container-high hover:bg-surface-variant active:scale-[0.98] transition-all flex items-center justify-center space-x-1.5 text-on-surface cursor-pointer" id="copy-code-btn" type="button">
+<span class="material-symbols-outlined text-[18px]" id="copy-icon">content_copy</span>
+<span class="font-label-md text-label-md" id="copy-label">Salin Kode</span>
+</button>
+<button class="h-11 px-3 rounded-lg bg-surface-container-high hover:bg-surface-variant active:scale-[0.98] transition-all flex items-center justify-center space-x-1.5 text-on-surface cursor-pointer" id="share-link-btn" type="button">
+<span class="material-symbols-outlined text-[18px]">share</span>
+<span class="font-label-md text-label-md">Bagikan Link</span>
+</button>
+</div>
+</div>
+<!-- Participant Group Stack -->
+<div class="flex flex-col space-y-2 pt-1">
+<div class="flex items-center justify-between px-0.5">
+<div class="flex items-center space-x-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Anggota</h3>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-primary-fixed font-label-sm text-label-sm">
+          3 online
+        </span>
+</div>
+<span class="font-body-sm text-body-sm text-secondary">Sinkron otomatis</span>
+</div>
+<!-- Members Stack List -->
+<div class="flex flex-col space-y-1.5">
+<!-- Member 1 (Host) -->
+<div class="p-3 rounded-xl bg-surface-container flex items-center justify-between">
+<div class="flex items-center space-x-3 min-w-0">
+<div class="relative w-10 h-10 rounded-full bg-surface-container-highest flex-shrink-0 flex items-center justify-center overflow-hidden">
+<span class="font-headline-sm text-headline-sm text-primary-fixed">FA</span>
+<div class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-primary-fixed"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Farhan Aditya (Kamu)</span>
+<span class="font-body-sm text-body-sm text-secondary truncate">Ponsel terhubung • Sensor siap</span>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-md bg-primary-container text-on-primary-fixed font-label-sm text-label-sm tracking-wide font-black flex-shrink-0">
+          HOST
+        </span>
+</div>
+<!-- Member 2 -->
+<div class="p-3 rounded-xl bg-surface-container flex items-center justify-between">
+<div class="flex items-center space-x-3 min-w-0">
+<div class="relative w-10 h-10 rounded-full bg-surface-container-highest flex-shrink-0 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up photographic portrait avatar of Sarah Nabila, an Indonesian university student wearing modern dark glasses, clean ambient dark studio backdrop with neon lime hint." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQKXY0DI7dsK54X_iZ8igl_JVLjmcxFJ8EPOubALP6O_1FCzDwXmIaakyzdUq6Nm5yx4CYvv0O4VOiS36dBgUX-CPZ89CHYCZdTQEtWlN0UGE0TI2Jj7yfpSkTjsg3g1qf49vMCIuv7C_wFbWSwHz-5NLP7atjQseoJq3Fq0xeJs_43DAr9jalzM5hD_mXkvKL_A7kgf5-aOBn0l87OKbdjpvw8v_ymDetBvtJenPBM0W4pJtvVoT7bA"/>
+<div class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-primary-fixed"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Sarah Nabila</span>
+<span class="font-body-sm text-body-sm text-secondary truncate">Meja terdeteksi • Siap</span>
+</div>
+</div>
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-surface-container-high text-primary-fixed flex-shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-fixed"></span>
+<span class="font-label-sm text-label-sm font-bold">Siap</span>
+</div>
+</div>
+<!-- Member 3 -->
+<div class="p-3 rounded-xl bg-surface-container flex items-center justify-between">
+<div class="flex items-center space-x-3 min-w-0">
+<div class="relative w-10 h-10 rounded-full bg-surface-container-highest flex-shrink-0 flex items-center justify-center overflow-hidden">
+<span class="font-headline-sm text-headline-sm text-secondary">DP</span>
+<div class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-primary-fixed"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Dimas Pratama</span>
+<span class="font-body-sm text-body-sm text-secondary truncate">Ponsel standby • Siap</span>
+</div>
+</div>
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-surface-container-high text-primary-fixed flex-shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-fixed"></span>
+<span class="font-label-sm text-label-sm font-bold">Siap</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Calibration Instructions Context Card -->
+<div class="p-3.5 rounded-xl bg-surface-container-low flex items-center space-x-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0 text-primary-fixed">
+<span class="material-symbols-outlined text-[20px]">screen_rotation</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary leading-snug">
+      Semua anggota otomatis masuk ke tahap kalibrasi serentak. Letakkan ponsel menghadap ke bawah setelah verifikasi.
+    </p>
+</div>
+<!-- Primary Call to Action Section -->
+<div class="pt-2 flex flex-col space-y-2.5">
+<button class="w-full h-[52px] rounded-xl bg-primary-fixed text-on-primary-fixed font-label-lg text-label-lg uppercase tracking-wider flex items-center justify-center space-x-2 transition-transform active:translate-y-1 active:shadow-none cursor-pointer" id="start-calibration-btn" style="box-shadow: 0 4px 0 #9ec41c;" type="button">
+<span class="material-symbols-outlined text-[22px]">play_circle</span>
+<span>Mulai Kalibrasi</span>
+</button>
+<button class="w-full h-11 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center justify-center space-x-2 cursor-pointer transition-colors" id="secondary-late-join-btn" type="button">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed">login</span>
+<span>Kalibrasi &amp; Masuk Sekarang</span>
+</button>
+</div>
+<!-- Leave Confirmation Dialog Modal (Hidden by Default) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center px-6 hidden bg-black/70 backdrop-blur-sm" id="leave-modal">
+<div class="w-full max-w-sm rounded-2xl bg-surface-container p-5 flex flex-col space-y-4 shadow-2xl">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-error-container text-on-error flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">logout</span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Keluar dari Lobi?</h4>
+<span class="font-body-sm text-body-sm text-secondary">Kamu adalah Host sesi ini.</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-secondary">
+        Jika kamu meninggalkan ruangan, sesi kelompok tetap tersimpan namun status aktifmu akan ditangguhkan.
+      </p>
+<div class="grid grid-cols-2 gap-2.5 pt-1">
+<button class="h-11 rounded-xl bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center justify-center cursor-pointer" id="cancel-leave-btn" type="button">
+          Tetap di Sini
+        </button>
+<button class="h-11 rounded-xl bg-error-container text-on-error-container font-label-md text-label-md font-bold flex items-center justify-center cursor-pointer" id="confirm-leave-btn" type="button">
+          Keluar
+        </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const copyBtn = document.getElementById('copy-code-btn');
+    const copyLabel = document.getElementById('copy-label');
+    const copyIcon = document.getElementById('copy-icon');
+    const shareBtn = document.getElementById('share-link-btn');
+    const startCalibrationBtn = document.getElementById('start-calibration-btn');
+    const lateJoinBtn = document.getElementById('secondary-late-join-btn');
+    const leaveModal = document.getElementById('leave-modal');
+    const cancelLeaveBtn = document.getElementById('cancel-leave-btn');
+    const confirmLeaveBtn = document.getElementById('confirm-leave-btn');
+
+    // Intercept default shell back button to display leave confirmation
+    const backBtn = document.querySelector('header button[aria-label="Kembali"]');
+    if (backBtn) {
+      backBtn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (leaveModal) leaveModal.classList.remove('hidden');
+      };
+    }
+
+    if (cancelLeaveBtn && leaveModal) {
+      cancelLeaveBtn.addEventListener('click', () => {
+        leaveModal.classList.add('hidden');
+      });
+    }
+
+    if (confirmLeaveBtn) {
+      confirmLeaveBtn.addEventListener('click', () => {
+        window.history.back();
+      });
+    }
+
+    // Copy room code interaction
+    if (copyBtn && copyLabel && copyIcon) {
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText('KRK-7K2Q');
+          copyLabel.textContent = 'Tersalin!';
+          copyIcon.textContent = 'check';
+          copyBtn.classList.add('text-primary-fixed');
+          setTimeout(() => {
+            copyLabel.textContent = 'Salin Kode';
+            copyIcon.textContent = 'content_copy';
+            copyBtn.classList.remove('text-primary-fixed');
+          }, 2000);
+        } catch (err) {
+          copyLabel.textContent = 'KRK-7K2Q';
+        }
+      });
+    }
+
+    // Share link trigger
+    if (shareBtn) {
+      shareBtn.addEventListener('click', async () => {
+        const shareData = {
+          title: 'Kerkom: Tugas Akhir HCI Kelompok 4',
+          text: 'Gabung sesi fokus belajar kelompok (Kode: KRK-7K2Q)',
+          url: 'https://kerkom.app/j/KRK-7K2Q'
+        };
+        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+          try {
+            await navigator.share(shareData);
+          } catch (_) {}
+        } else {
+          // Fallback feedback
+          navigator.clipboard.writeText('https://kerkom.app/j/KRK-7K2Q');
+          shareBtn.classList.add('text-primary-fixed');
+          setTimeout(() => {
+            shareBtn.classList.remove('text-primary-fixed');
+          }, 1500);
+        }
+      });
+    }
+
+    // Navigation triggers to S08 (Calibration phase)
+    function proceedToCalibration() {
+      // Intent action to calibration screen
+      window.dispatchEvent(new CustomEvent('navigate', { detail: { screen: 'S08' } }));
+    }
+
+    if (startCalibrationBtn) {
+      startCalibrationBtn.addEventListener('click', proceedToCalibration);
+    }
+
+    if (lateJoinBtn) {
+      lateJoinBtn.addEventListener('click', proceedToCalibration);
+    }
+  })();
+</script></main></body></html>

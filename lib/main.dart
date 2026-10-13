@@ -1,54 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/home_screen.dart';
-import 'theme/app_theme.dart';
-import 'services/firebase_service.dart';
-import 'services/room_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/config/firebase_config.dart';
+import 'core/router/app_router.dart';
+import 'core/services/deep_link_service.dart';
+import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
     ),
   );
 
   try {
-    // Inisialisasi Firebase dengan kredensial dari google-services.json & Realtime Database URL
+    // Inisialisasi Firebase dengan kredensial google-services.json eksisting
     await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: 'AIzaSyBxC0rck6OtS9zW6k4YZbuzu5c_lovATUI',
-        appId: '1:834453228503:android:0410d8cc2ef8bdbfa91992',
-        messagingSenderId: '834453228503',
-        projectId: 'kerkom-project',
-        databaseURL: 'https://kerkom-project-default-rtdb.asia-southeast1.firebasedatabase.app/',
-      ),
+      options: KerkomFirebaseConfig.options,
     );
-
-    // Hubungkan instance Firebase Realtime Database asia-southeast1
-    await FirebaseRealtimeService.instance.initialize();
-    await RoomService().loadUserProfile();
   } catch (error) {
     debugPrint('Inisialisasi Firebase Realtime Database info: $error');
   }
 
-  runApp(const FocusRoomApp());
+  runApp(
+    const ProviderScope(
+      child: KerkomApp(),
+    ),
+  );
 }
 
-class FocusRoomApp extends StatelessWidget {
-  const FocusRoomApp({super.key});
+class KerkomApp extends ConsumerStatefulWidget {
+  const KerkomApp({super.key});
+
+  @override
+  ConsumerState<KerkomApp> createState() => _KerkomAppState();
+}
+
+class _KerkomAppState extends ConsumerState<KerkomApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final router = ref.read(routerProvider);
+      ref.read(deepLinkServiceProvider).initialize(ref, router);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'StudyPact - Focus & Study Group Anti-Distraction',
+    final router = ref.watch(routerProvider);
+
+    return MaterialApp.router(
+      title: 'Kerkom',
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.light,
-      theme: AppTheme.lightTheme,
-      home: const HomeScreen(),
+      theme: AppTheme.darkTheme,
+      routerConfig: router,
     );
   }
 }

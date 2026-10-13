@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=390, height=844, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>S06 Sheet Gabung Kode</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bgDark: '#0F1115',
+            cardDark: '#1A1D24',
+            limeAccent: '#C6F432',
+            limeDark: '#10140A',
+            limeShadow: '#9ac418',
+            mutedText: '#8A8F9C',
+            dangerRed: '#FF4D4D',
+            successGreen: '#34D399',
+            warningAmber: '#FFC83D',
+          },
+          fontFamily: {
+            nunito: ['Nunito', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      background-color: #0F1115;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Nunito', sans-serif;
+      overflow: hidden;
+    }
+    #mobile-frame {
+      width: 390px;
+      height: 844px;
+      max-width: 390px;
+      max-height: 844px;
+      background-color: #0F1115;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .btn-primary {
+      height: 52px;
+      border-radius: 16px;
+      background-color: #C6F432;
+      color: #10140A;
+      font-weight: 800;
+      box-shadow: 0 4px 0 #9ac418;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .btn-primary:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #9ac418;
+    }
+    .code-input {
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-family: 'Nunito', monospace, sans-serif;
+    }
+  </style>
+</head>
+<body>
+<!-- Strict 390x844 Mobile Device Viewport -->
+<div class="relative shadow-2xl" id="mobile-frame">
+<!-- Dimmed S04 Beranda Background (Context Underlay) -->
+<div class="absolute inset-0 px-5 pt-12 pb-6 flex flex-col pointer-events-none select-none opacity-30 filter blur-[1px]">
+<!-- Status Bar Area Placeholder -->
+<div class="flex justify-between items-center mb-6 text-white text-xs font-bold px-2">
+<span>09:41</span>
+<div class="flex items-center gap-1.5">
+<svg class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18.25A9.956 9.956 0 012 12C2 6.48 6.48 2 12 2s10 4.48 10 10c0 2.32-.8 4.45-2.14 6.15l-.62-.64C20.35 16.03 21 14.09 21 12c0-4.97-4.03-9-9-9z"></path></svg>
+<div class="w-5 h-2.5 border border-white rounded-sm p-0.5"><div class="w-full h-full bg-white rounded-2xs"></div></div>
+</div>
+</div>
+<!-- S04 Beranda Top Header -->
+<div class="flex items-center justify-between mb-6">
+<div>
+<h1 class="text-2xl font-black text-white leading-tight">Halo, Farhan</h1>
+<p class="text-sm font-semibold text-mutedText">Siap kerja kelompok hari ini?</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-cardDark border border-white/10 flex items-center justify-center font-bold text-limeAccent">
+          FH
+        </div>
+</div>
+<!-- S04 Active Room Banner Mock -->
+<div class="bg-cardDark border border-white/10 rounded-3xl p-5 mb-6 relative overflow-hidden">
+<div class="flex items-center gap-2 mb-2">
+<span class="w-2 h-2 rounded-full bg-limeAccent animate-pulse"></span>
+<span class="text-xs font-extrabold uppercase tracking-wider text-limeAccent">Sesi Terjadwal</span>
+</div>
+<h3 class="text-lg font-black text-white mb-1">Tugas Akhir UI/UX</h3>
+<p class="text-xs font-semibold text-mutedText mb-4">Mulai dalam 15 menit bersama tim</p>
+<div class="h-10 bg-white/5 rounded-xl"></div>
+</div>
+<!-- S04 Recent List Mock -->
+<div class="text-sm font-bold text-white mb-3">Sesi terakhir</div>
+<div class="space-y-3">
+<div class="bg-cardDark rounded-2xl p-4 border border-white/5 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-limeAccent font-black">#1</div>
+<div>
+<div class="text-sm font-bold text-white">Riset Pengguna</div>
+<div class="text-xs text-mutedText">45 menit · Kemarin</div>
+</div>
+</div>
+</div>
+<div class="bg-cardDark rounded-2xl p-4 border border-white/5 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-limeAccent font-black">#2</div>
+<div>
+<div class="text-sm font-bold text-white">Sprint Desain</div>
+<div class="text-xs text-mutedText">90 menit · 3 hari lalu</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Dark Overlay Backdrop -->
+<div class="absolute inset-0 bg-black/75 backdrop-blur-[2px] z-10"></div>
+<!-- Modal Bottom Sheet -->
+<div class="relative w-full bg-[#1A1D24] rounded-t-[28px] px-6 pt-3 pb-8 z-20 shadow-2xl border-t border-white/10">
+<!-- Small Center Pill Drag Handle -->
+<div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-4"></div>
+<!-- Header Row: Title & Close Icon Button -->
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-[20px] font-bold text-white tracking-tight font-nunito">Gabung dengan Kode</h2>
+<button aria-label="Tutup modal" class="w-9 h-9 rounded-full bg-[#0F1115] p-2 flex items-center justify-center text-mutedText hover:text-white transition-colors focus:outline-none">
+<svg class="w-5 h-5 stroke-[2.2]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+<!-- Input Field Section -->
+<div class="mb-5">
+<label class="block text-xs font-extrabold uppercase tracking-wider text-mutedText mb-2">
+          KODE RUANG SESI
+        </label>
+<!-- Input Box with Danger Red Border & Error Alert Icon -->
+<div class="relative">
+<input class="code-input w-full h-[54px] bg-[#0F1115] text-white font-black text-lg px-4 pr-12 rounded-2xl border-2 border-[#FF4D4D] focus:border-[#FF4D4D] focus:ring-1 focus:ring-[#FF4D4D] focus:outline-none placeholder:text-mutedText/40 placeholder:tracking-normal placeholder:font-bold" placeholder="KRK-7K2Q" type="text" value="KRK-9X4A"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+<svg class="w-5 h-5 text-[#FF4D4D]" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="10"></circle>
+<line x1="12" x2="12" y1="8" y2="12"></line>
+<line x1="12" x2="12.01" y1="16" y2="16"></line>
+</svg>
+</div>
+</div>
+<!-- Error Message Below in Red -->
+<p class="text-xs font-bold text-[#FF4D4D] mt-2 px-1">
+          Kode tidak ditemukan atau sesi sudah selesai
+        </p>
+</div>
+<!-- Helper Explainer Card -->
+<div class="bg-[#111317] rounded-xl p-3.5 border border-white/5 flex items-start gap-3 mb-6">
+<svg class="w-5 h-5 text-mutedText shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-xs font-semibold text-mutedText leading-relaxed">
+          Minta kode 8 karakter unik dari pembuat ruang untuk bergabung dalam sesi fokus bersama.
+        </span>
+</div>
+<!-- Primary Action Button -->
+<button class="btn-primary w-full text-base">
+        Gabung
+      </button>
+<!-- Home Indicator Spacing for iOS -->
+<div class="w-32 h-1 bg-white/20 rounded-full mx-auto mt-6"></div>
+</div>
+</div>
+</body></html>

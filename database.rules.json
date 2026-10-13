@@ -6,23 +6,84 @@
         ".write": true
       }
     },
-    "rooms": {
-      "$roomCode": {
+    "userRooms": {
+      "$uid": {
         ".read": true,
         ".write": true,
-        "members": {
-          "$memberId": {
-            ".read": true,
-            ".write": true
-          }
-        },
-        "alerts": {
+        ".indexOn": ["scheduledStart", "status", "role"]
+      }
+    },
+    "rooms": {
+      ".read": true,
+      ".write": true,
+      "$roomId": {
+        ".read": true,
+        ".write": true,
+        ".indexOn": ["hostUid", "code", "createdAt"]
+      }
+    },
+    "roomCodes": {
+      ".read": true,
+      ".write": true,
+      "$code": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "roomMembers": {
+      ".read": true,
+      ".write": true,
+      "$roomId": {
+        ".read": true,
+        ".write": true,
+        "$uid": {
           ".read": true,
           ".write": true
         }
       }
     },
+    "roomEvents": {
+      ".read": true,
+      ".write": true,
+      "$roomId": {
+        ".read": true,
+        ".write": true,
+        "$eventId": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    "userSessions": {
+      ".read": true,
+      "$uid": {
+        ".read": true,
+        ".write": true,
+        ".indexOn": ["completedAt"]
+      }
+    },
     "session_logs": {
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "userActiveRoom": {
+      ".read": true,
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "userCalendarIntegrations": {
+      ".read": true,
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "notifications": {
+      ".read": true,
       "$uid": {
         ".read": true,
         ".write": true

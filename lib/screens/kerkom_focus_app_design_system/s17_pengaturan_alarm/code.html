@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;800;900&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-primary-fixed": "#161f00", "on-surface-variant": "#c4c9ae", "error-container": "#93000a", "tertiary-container": "#ffdad7", "on-surface": "#e2e2e8", "primary": "#ffffff", "on-tertiary-container": "#c31f29", "on-secondary": "#2d3038", "surface-dim": "#111317", "on-secondary-fixed": "#191c22", "primary-fixed-dim": "#aad600", "secondary-fixed-dim": "#c4c6d0", "primary-fixed": "#c5f331", "surface-container": "#1e2024", "tertiary": "#ffffff", "surface-variant": "#333539", "inverse-on-surface": "#2f3035", "surface-container-lowest": "#0c0e12", "on-primary-fixed-variant": "#3b4d00", "on-secondary-container": "#b3b5be", "on-background": "#e2e2e8", "secondary-fixed": "#e0e2ec", "secondary": "#c4c6d0", "on-tertiary-fixed": "#410004", "surface-bright": "#37393e", "tertiary-fixed": "#ffdad7", "on-error-container": "#ffdad6", "on-primary": "#283500", "on-secondary-fixed-variant": "#44474f", "surface": "#111317", "inverse-primary": "#506600", "surface-tint": "#aad600", "on-error": "#690005", "primary-container": "#c5f331", "outline-variant": "#444934", "surface-container-low": "#1a1c20", "surface-container-highest": "#333539", "surface-container-high": "#282a2e", "inverse-surface": "#e2e2e8", "outline": "#8e937a", "on-tertiary": "#68000b", "error": "#ffb4ab", "tertiary-fixed-dim": "#ffb3ae", "background": "#111317", "on-tertiary-fixed-variant": "#930014", "secondary-container": "#44474f", "on-primary-container": "#556d00" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-sm": "0.5rem", "space-lg": "1.5rem", "space-xs": "0.25rem", "margin": "1.25rem", "gutter": "1rem", "space-md": "1rem", "space-xl": "2rem" }, fontFamily: { "label-sm": ["Nunito Sans"], "label-md": ["Nunito Sans"], "headline-sm": ["Nunito Sans"], "headline-lg": ["Nunito Sans"], "body-md": ["Nunito Sans"], "headline-md": ["Nunito Sans"], "timer-display": ["Nunito Sans"], "body-sm": ["Nunito Sans"], "body-lg": ["Nunito Sans"], "label-lg": ["Nunito Sans"] }, fontSize: { "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.6px", fontWeight: "800" }], "label-md": ["13px", { lineHeight: "16px", letterSpacing: "0.4px", fontWeight: "800" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "800" }], "headline-lg": ["28px", { lineHeight: "36px", letterSpacing: "-0.5px", fontWeight: "900" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "600" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.3px", fontWeight: "800" }], "timer-display": ["64px", { lineHeight: "72px", letterSpacing: "-1.5px", fontWeight: "900" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "600" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["16px", { lineHeight: "20px", fontWeight: "800" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#111317;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style></head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/80 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><button aria-label="Kembali" class="w-11 h-11 flex items-center justify-center text-on-surface hover:text-primary-fixed transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="text-headline-sm font-headline-sm uppercase text-on-surface">Statistik Fokus Detail</h1></div><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full px-margin pt-16 pb-safe bg-surface min-h-screen"><div class="flex flex-col w-full pb-8">
+<!-- Local Device Scope Banner -->
+<div class="flex items-center gap-space-sm bg-surface-container-high px-space-md py-space-sm rounded-xl mb-space-lg text-on-surface">
+<span class="material-symbols-outlined text-[20px] text-primary-fixed" style="font-variation-settings: 'FILL' 1;">devices</span>
+<p class="font-body-sm text-body-sm text-on-surface">
+<span class="font-bold text-primary-fixed">Preferensi Lokal:</span> Berlaku di HP-mu saja, tidak memengaruhi rekan kelompok.
+    </p>
+</div>
+<!-- Alarm Mode Cards Group -->
+<section aria-label="Mode Alarm" class="flex flex-col gap-space-sm mb-space-lg">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-space-xs">Tipe Notifikasi Gerak</span>
+<!-- Option 1: Audio Only -->
+<button aria-checked="false" class="alarm-option w-full text-left bg-surface-container hover:bg-surface-container-high rounded-[20px] p-space-md flex items-center justify-between transition-colors min-h-[76px] cursor-pointer" id="mode-audio" onclick="selectAlarmMode('audio')" role="radio" type="button">
+<div class="flex items-start gap-space-md pr-space-sm">
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center shrink-0 text-on-surface">
+<span class="material-symbols-outlined text-[22px]">volume_up</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">Audio</span>
+<span class="font-body-sm text-body-sm text-on-secondary-container mt-0.5">Hanya suara dering peringatan saat HP terangkat</span>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0 radio-circle">
+<div class="w-2.5 h-2.5 rounded-full bg-transparent radio-dot transition-all"></div>
+</div>
+</button>
+<!-- Option 2: Vibration Only -->
+<button aria-checked="false" class="alarm-option w-full text-left bg-surface-container hover:bg-surface-container-high rounded-[20px] p-space-md flex items-center justify-between transition-colors min-h-[76px] cursor-pointer" id="mode-vibrate" onclick="selectAlarmMode('vibrate')" role="radio" type="button">
+<div class="flex items-start gap-space-md pr-space-sm">
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center shrink-0 text-on-surface">
+<span class="material-symbols-outlined text-[22px]">vibration</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">Getar</span>
+<span class="font-body-sm text-body-sm text-on-secondary-container mt-0.5">Hanya getaran haptik tegas tanpa suara</span>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0 radio-circle">
+<div class="w-2.5 h-2.5 rounded-full bg-transparent radio-dot transition-all"></div>
+</div>
+</button>
+<!-- Option 3: Audio & Vibration (Default Active) -->
+<button aria-checked="true" class="alarm-option w-full text-left bg-surface-container-high rounded-[20px] p-space-md flex items-center justify-between transition-colors min-h-[76px] cursor-pointer" id="mode-both" onclick="selectAlarmMode('both')" role="radio" type="button">
+<div class="flex items-start gap-space-md pr-space-sm">
+<div class="w-10 h-10 rounded-xl bg-on-primary-fixed-variant flex items-center justify-center shrink-0 text-primary-fixed">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary">Audio dan Getar</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Kombinasi suara dering dan getaran maksimal</span>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full bg-primary-fixed flex items-center justify-center shrink-0 radio-circle">
+<div class="w-2.5 h-2.5 rounded-full bg-on-primary-fixed radio-dot transition-all"></div>
+</div>
+</button>
+</section>
+<!-- Volume Slider Module -->
+<section class="bg-surface-container rounded-[20px] p-space-md mb-space-lg flex flex-col gap-space-md transition-opacity" id="volume-section">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">volume_down</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Volume Alarm</span>
+</div>
+<span class="font-label-lg text-label-lg text-primary-fixed" id="volume-indicator">80%</span>
+</div>
+<!-- Range Slider Bar with dynamic visual gauge -->
+<div class="flex items-center gap-space-md w-full">
+<button aria-label="Mute" class="p-1 text-on-secondary-container hover:text-on-surface" onclick="adjustVolume(0)" type="button">
+<span class="material-symbols-outlined text-[20px]">volume_mute</span>
+</button>
+<div class="relative w-full flex items-center h-8">
+<input class="w-full h-2 rounded-full appearance-none cursor-pointer bg-surface-container-highest accent-primary-fixed focus:outline-none" id="volume-slider" max="100" min="10" oninput="handleVolumeChange(this.value)" type="range" value="80"/>
+</div>
+<button aria-label="Volume Penuh" class="p-1 text-on-secondary-container hover:text-on-surface" onclick="adjustVolume(100)" type="button">
+<span class="material-symbols-outlined text-[20px]">volume_up</span>
+</button>
+</div>
+<p class="font-body-sm text-body-sm text-on-secondary-container" id="volume-helper">
+      Tingkat volume ini akan mengabaikan mode Senyap jika alarm darurat terpicu.
+    </p>
+</section>
+<!-- Audio Preview / Test Action Button -->
+<button class="w-full h-[52px] rounded-[16px] bg-surface-container hover:bg-surface-container-high active:bg-surface-container-highest flex items-center justify-center gap-space-sm font-label-lg text-label-lg text-on-surface mb-space-xl transition-all cursor-pointer" id="test-alarm-btn" onclick="toggleTestAlarm()" type="button">
+<span class="material-symbols-outlined text-[22px] text-primary-fixed" id="test-icon">play_circle</span>
+<span id="test-label">Tes Alarm HP</span>
+</button>
+<!-- Sticky Bottom CTAs Stack -->
+<div class="flex flex-col gap-space-sm pt-space-xs">
+<!-- Primary Save Button -->
+<button class="w-full h-[52px] rounded-[16px] bg-primary-fixed hover:bg-primary-fixed-dim text-on-primary-fixed font-label-lg text-label-lg flex items-center justify-center tracking-wide shadow-[0_4px_0_#9EC41C] active:translate-y-[3px] active:shadow-[0_1px_0_#9EC41C] transition-all cursor-pointer" onclick="handleSaveSettings()" type="button">
+      Simpan
+    </button>
+<p class="font-body-sm text-body-sm text-center text-on-secondary-container px-space-md">
+      Perubahan akan otomatis diterapkan pada sesi kerja kelompok berikutnya.
+    </p>
+</div>
+</div>
+<script>
+  let currentMode = 'both';
+  let isTesting = false;
+  let testTimer = null;
+
+  function selectAlarmMode(mode) {
+    currentMode = mode;
+    const modes = ['audio', 'vibrate', 'both'];
+
+    modes.forEach(m => {
+      const card = document.getElementById('mode-' + m);
+      const circle = card.querySelector('.radio-circle');
+      const dot = card.querySelector('.radio-dot');
+      const iconWrap = card.querySelector('div:first-child > div:first-child');
+      const title = card.querySelector('.font-headline-sm');
+
+      if (m === mode) {
+        card.setAttribute('aria-checked', 'true');
+        card.classList.remove('bg-surface-container');
+        card.classList.add('bg-surface-container-high');
+        circle.classList.remove('bg-surface-container-highest');
+        circle.classList.add('bg-primary-fixed');
+        dot.classList.remove('bg-transparent');
+        dot.classList.add('bg-on-primary-fixed');
+        iconWrap.classList.remove('bg-surface-container-highest', 'text-on-surface');
+        iconWrap.classList.add('bg-on-primary-fixed-variant', 'text-primary-fixed');
+        title.classList.remove('text-on-surface');
+        title.classList.add('text-primary');
+      } else {
+        card.setAttribute('aria-checked', 'false');
+        card.classList.remove('bg-surface-container-high');
+        card.classList.add('bg-surface-container');
+        circle.classList.add('bg-surface-container-highest');
+        circle.classList.remove('bg-primary-fixed');
+        dot.classList.add('bg-transparent');
+        dot.classList.remove('bg-on-primary-fixed');
+        iconWrap.classList.add('bg-surface-container-highest', 'text-on-surface');
+        iconWrap.classList.remove('bg-on-primary-fixed-variant', 'text-primary-fixed');
+        title.classList.add('text-on-surface');
+        title.classList.remove('text-primary');
+      }
+    });
+
+    const volSection = document.getElementById('volume-section');
+    const volSlider = document.getElementById('volume-slider');
+    const volHelper = document.getElementById('volume-helper');
+    const testLabel = document.getElementById('test-label');
+
+    if (mode === 'vibrate') {
+      volSection.classList.add('opacity-40', 'pointer-events-none');
+      volSlider.disabled = true;
+      volHelper.textContent = "Pengaturan volume tidak aktif saat mode Getar dipilih.";
+      testLabel.textContent = "Tes Getaran HP";
+    } else {
+      volSection.classList.remove('opacity-40', 'pointer-events-none');
+      volSlider.disabled = false;
+      volHelper.textContent = "Tingkat volume ini akan mengabaikan mode Senyap jika alarm darurat terpicu.";
+      testLabel.textContent = mode === 'audio' ? "Tes Suara Alarm" : "Tes Alarm HP";
+    }
+  }
+
+  function handleVolumeChange(val) {
+    document.getElementById('volume-indicator').textContent = val + '%';
+  }
+
+  function adjustVolume(val) {
+    if (currentMode === 'vibrate') return;
+    const slider = document.getElementById('volume-slider');
+    slider.value = val;
+    handleVolumeChange(val);
+  }
+
+  function toggleTestAlarm() {
+    const icon = document.getElementById('test-icon');
+    const label = document.getElementById('test-label');
+
+    if (!isTesting) {
+      isTesting = true;
+      icon.textContent = 'stop_circle';
+      icon.classList.add('text-error');
+      icon.classList.remove('text-primary-fixed');
+      label.textContent = currentMode === 'vibrate' ? "Menggetarkan HP... (Ketuk Berhenti)" : "Membunyikan Alarm... (Ketuk Berhenti)";
+
+      // Native Web Vibration API if supported
+      if (navigator.vibrate && currentMode !== 'audio') {
+        navigator.vibrate([300, 150, 300, 150, 600]);
+      }
+
+      clearTimeout(testTimer);
+      testTimer = setTimeout(() => {
+        if (isTesting) toggleTestAlarm();
+      }, 4000);
+    } else {
+      isTesting = false;
+      clearTimeout(testTimer);
+      if (navigator.vibrate) navigator.vibrate(0);
+      icon.textContent = 'play_circle';
+      icon.classList.remove('text-error');
+      icon.classList.add('text-primary-fixed');
+      selectAlarmMode(currentMode);
+    }
+  }
+
+  function handleSaveSettings() {
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[20px] animate-spin">sync</span> Tersimpan!`;
+    setTimeout(() => {
+      window.history.back();
+    }, 600);
+  }
+</script></main></body></html>

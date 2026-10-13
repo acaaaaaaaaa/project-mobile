@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+<!-- STITCH_SVG_START:ANIMATION_66 class="fixed inset-0 w-full h-full" --><div class="fixed inset-0 w-full h-full" id="animated-svg-ANIMATION_66" style="display:block;"><svg class="w-full h-full" height="512" viewbox="0 0 512 512" width="512" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient id="gradPenPillar" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#0077B6"></stop>
+<stop offset="100%" stop-color="#03045E"></stop>
+</lineargradient>
+<lineargradient id="gradBookUpper" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#90E0EF"></stop>
+<stop offset="50%" stop-color="#00B4D8"></stop>
+<stop offset="100%" stop-color="#0077B6"></stop>
+</lineargradient>
+<lineargradient id="gradCompassLower" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#00B4D8"></stop>
+<stop offset="100%" stop-color="#03045E"></stop>
+</lineargradient>
+<filter height="140%" id="logoGlow" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="12" flood-color="#03045E" flood-opacity="0.16" stddeviation="16"></fedropshadow>
+<fedropshadow dx="0" dy="4" flood-color="#00B4D8" flood-opacity="0.14" stddeviation="6"></fedropshadow>
+</filter>
+</defs>
+<style>
+    /* KEYFRAMES UNTUK METAMORFOSIS ALAT TULIS / ELEMEN KERJA KELOMPOK MENJADI LOGO K LENGKAP */
+
+    @keyframes penNibMorph {
+      0% {
+        transform: translateY(18px) scale(1);
+        opacity: 1;
+      }
+      22% {
+        transform: translateY(0px) scale(1.1);
+        opacity: 1;
+      }
+      38% {
+        transform: translateY(-24px) scale(0.6);
+        opacity: 0;
+      }
+      100% {
+        transform: translateY(-24px) scale(0);
+        opacity: 0;
+      }
+    }
+
+    @keyframes penBodyToPillar {
+      0% {
+        transform: translate(74px, 20px) scaleY(0.7) scaleX(0.7);
+        opacity: 0.2;
+      }
+      25% {
+        transform: translate(74px, 0px) scaleY(1.02) scaleX(0.85);
+        opacity: 1;
+      }
+      45% {
+        transform: translate(0px, 0px) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(0px, 0px) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes stationeryTopMorph {
+      0% {
+        transform: translate(120px, -80px) rotate(-35deg) scale(0.3);
+        opacity: 0;
+      }
+      20% {
+        transform: translate(60px, -30px) rotate(-18deg) scale(0.9);
+        opacity: 0.9;
+      }
+      40% {
+        transform: translate(25px, -10px) rotate(-6deg) scale(1.05);
+        opacity: 1;
+      }
+      55%, 100% {
+        transform: translate(0px, 0px) rotate(0deg) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes stationeryBottomMorph {
+      0% {
+        transform: translate(110px, 110px) rotate(40deg) scale(0.3);
+        opacity: 0;
+      }
+      24% {
+        transform: translate(50px, 45px) rotate(20deg) scale(0.9);
+        opacity: 0.9;
+      }
+      42% {
+        transform: translate(15px, 15px) rotate(8deg) scale(1.06);
+        opacity: 1;
+      }
+      60%, 100% {
+        transform: translate(0px, 0px) rotate(0deg) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes studentOrbitUpper {
+      0% {
+        transform: translate(400px, 80px) scale(0);
+        opacity: 0;
+      }
+      35% {
+        transform: translate(370px, 120px) scale(0.7);
+        opacity: 0.7;
+      }
+      52% {
+        transform: translate(344px, 142px) scale(1.22);
+        opacity: 1;
+      }
+      70%, 100% {
+        transform: translate(344px, 142px) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes studentOrbitLower {
+      0% {
+        transform: translate(390px, 420px) scale(0);
+        opacity: 0;
+      }
+      38% {
+        transform: translate(360px, 390px) scale(0.7);
+        opacity: 0.7;
+      }
+      56% {
+        transform: translate(332px, 368px) scale(1.22);
+        opacity: 1;
+      }
+      72%, 100% {
+        transform: translate(332px, 368px) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes inkStrokeDraw {
+      0% {
+        stroke-dashoffset: 240;
+        opacity: 0;
+      }
+      40% {
+        opacity: 1;
+      }
+      65%, 100% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+      }
+    }
+
+    @keyframes synergyGlowSpark {
+      0%, 45% {
+        transform: scale(0) rotate(0deg);
+        opacity: 0;
+      }
+      62% {
+        transform: scale(1.4) rotate(90deg);
+        opacity: 1;
+      }
+      75% {
+        transform: scale(0.9) rotate(140deg);
+        opacity: 0.85;
+      }
+      100% {
+        transform: scale(1) rotate(180deg);
+        opacity: 1;
+      }
+    }
+
+    @keyframes orbitPulseFlow {
+      0% {
+        transform: rotate(0deg);
+        opacity: 0.35;
+      }
+      50% {
+        opacity: 0.75;
+      }
+      100% {
+        transform: rotate(360deg);
+        opacity: 0.35;
+      }
+    }
+
+    @keyframes logoAssembleComplete {
+      0%, 65% {
+        transform: scale(1);
+      }
+      80% {
+        transform: scale(1.025);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .anim-canvas-idle {
+      animation: logoAssembleComplete 5s ease-in-out infinite alternate;
+      transform-origin: 256px 256px;
+    }
+
+    .anim-pen-nib {
+      transform-origin: 214px 105px;
+      animation: penNibMorph 5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    .anim-pen-pillar {
+      transform-origin: 166px 256px;
+      animation: penBodyToPillar 5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    .anim-stationery-top {
+      transform-origin: 236px 160px;
+      animation: stationeryTopMorph 5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    .anim-stationery-bot {
+      transform-origin: 220px 270px;
+      animation: stationeryBottomMorph 5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    .anim-stud-top {
+      transform-origin: 0px 0px;
+      animation: studentOrbitUpper 5s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+
+    .anim-stud-bot {
+      transform-origin: 0px 0px;
+      animation: studentOrbitLower 5s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+
+    .anim-ink-table {
+      stroke-dasharray: 240;
+      stroke-dashoffset: 240;
+      animation: inkStrokeDraw 5s ease-out infinite;
+    }
+
+    .anim-spark-star {
+      transform-origin: 268px 248px;
+      animation: synergyGlowSpark 5s ease-in-out infinite;
+    }
+
+    .anim-orbit-spin {
+      transform-origin: 256px 256px;
+      animation: orbitPulseFlow 18s linear infinite;
+    }
+  </style>
+<!-- Lintasan Orbit Dinamis Kerja Kelompok (Tanpa Card Background) -->
+<g class="anim-orbit-spin">
+<circle cx="256" cy="256" fill="none" opacity="0.45" r="192" stroke="#00B4D8" stroke-dasharray="12 16" stroke-width="2"></circle>
+<circle cx="448" cy="256" fill="#00B4D8" r="5"></circle>
+<circle cx="64" cy="256" fill="#90E0EF" r="4.5"></circle>
+<circle cx="256" cy="64" fill="#0077B6" r="5.5"></circle>
+<circle cx="256" cy="448" fill="#CAF0F8" r="4"></circle>
+</g>
+<!-- Seluruh Grup Logo Metamorfosis Transparan -->
+<g class="anim-canvas-idle" filter="url(#logoGlow)">
+<!-- TAHAP 1: ALAT TULIS UTAMA -> PENA FOUNTAIN / PENSIL AKADEMIK YANG BERMUTASI JADI BATANG 'K' -->
+<g class="anim-pen-nib">
+<path d="M 204 128 L 214 96 L 224 128 Z" fill="#00B4D8"></path>
+<circle cx="214" cy="116" fill="#CAF0F8" r="2.5"></circle>
+<line stroke="#CAF0F8" stroke-width="1.5" x1="214" x2="214" y1="116" y2="97"></line>
+</g>
+<!-- Batang Pena Fountain / Punggung Buku Pengetahuan -> Pilar Vertikal Utama 'K' -->
+<g class="anim-pen-pillar">
+<rect fill="url(#gradPenPillar)" height="256" rx="26" width="52" x="140" y="128"></rect>
+<path d="M 152 136 H 180 V 204 L 166 193 L 152 204 Z" fill="#90E0EF" opacity="0.95"></path>
+<line opacity="0.4" stroke="#CAF0F8" stroke-linecap="round" stroke-width="2" x1="150" x2="182" y1="230" y2="230"></line>
+<line opacity="0.4" stroke="#CAF0F8" stroke-linecap="round" stroke-width="2" x1="150" x2="182" y1="242" y2="242"></line>
+</g>
+<!-- TAHAP 2: ALAT BANTU BELAJAR (BUKU TERBUKA / LAPTOP) -> LENGAN ATAS 'K' -->
+<g class="anim-stationery-top">
+<path d="M 206 230 C 235 175, 275 155, 330 180 C 348 190, 340 212, 316 216 C 265 224, 235 242, 206 262 Z" fill="url(#gradBookUpper)" opacity="0.95"></path>
+<rect fill="url(#gradBookUpper)" height="130" rx="24" transform="rotate(42, 228, 158)" width="48" x="228" y="158"></rect>
+<line opacity="0.8" stroke="#CAF0F8" stroke-linecap="round" stroke-width="2.5" x1="262" x2="296" y1="184" y2="154"></line>
+<line opacity="0.8" stroke="#CAF0F8" stroke-linecap="round" stroke-width="2.5" x1="272" x2="306" y1="196" y2="166"></line>
+</g>
+<!-- TAHAP 3: ALAT UKUR (JANGKA / PENGGARIS SEGITIGA) -> LENGAN BAWAH 'K' -->
+<g class="anim-stationery-bot">
+<rect fill="url(#gradCompassLower)" height="135" rx="24" transform="rotate(-42, 216, 270)" width="48" x="216" y="270"></rect>
+<circle cx="216" cy="270" fill="#0077B6" opacity="0.85" r="14"></circle>
+<circle cx="216" cy="270" fill="#CAF0F8" r="6"></circle>
+</g>
+<!-- TAHAP 4: MEJA DISKUSI BERSAMA -->
+<path class="anim-ink-table" d="M 194 322 Q 258 350 326 312" fill="none" stroke="#00B4D8" stroke-linecap="round" stroke-width="7"></path>
+<!-- TAHAP 5: ANGGOTA KELOMPOK MAHASISWA -->
+<!-- Mahasiswa 1 (Atas) -->
+<g class="anim-stud-top">
+<circle cx="0" cy="0" fill="#00B4D8" r="26"></circle>
+<circle cx="0" cy="0" fill="#CAF0F8" r="13"></circle>
+<polygon fill="#03045E" opacity="0.9" points="0,-16 12,-10 0,-4 -12,-10"></polygon>
+</g>
+<!-- Mahasiswa 2 (Bawah) -->
+<g class="anim-stud-bot">
+<circle cx="0" cy="0" fill="#0077B6" r="26"></circle>
+<circle cx="0" cy="0" fill="#CAF0F8" r="13"></circle>
+<polygon fill="#00B4D8" opacity="0.9" points="0,-16 12,-10 0,-4 -12,-10"></polygon>
+</g>
+<!-- TAHAP 6: BINTANG PRESTASI & SPARK SINERGI -->
+<g class="anim-spark-star">
+<polygon fill="#CAF0F8" points="14,0 18,10 28,14 18,18 14,28 10,18 0,14 10,10" stroke="#00B4D8" stroke-width="2.5" transform="translate(254, 234)"></polygon>
+</g>
+</g>
+</svg></div><!-- STITCH_SVG_END:ANIMATION_66 -->
+</body>
+</html>

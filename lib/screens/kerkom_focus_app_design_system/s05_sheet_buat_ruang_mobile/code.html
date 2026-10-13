@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=390, height=844, initial-scale=1.0" name="viewport"/>
+<title>S05 Sheet Buat Ruang</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bgDark: '#0F1115',
+            cardDark: '#1A1D24',
+            limeAccent: '#C6F432',
+            limeDark: '#10140A',
+            limeShadow: '#9ac418',
+            mutedText: '#8A8F9C',
+            dangerRed: '#FF4D4D',
+            successGreen: '#34D399',
+            warningAmber: '#FFC83D',
+          },
+          fontFamily: {
+            nunito: ['Nunito', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      width: 390px;
+      height: 844px;
+      margin: 0;
+      padding: 0;
+      background-color: #0F1115;
+      color: #FFFFFF;
+      font-family: 'Nunito', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+    .btn-primary {
+      height: 52px;
+      border-radius: 16px;
+      background-color: #C6F432;
+      color: #10140A;
+      font-weight: 800;
+      box-shadow: 0 4px 0 #9ac418;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tab-num {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="relative flex flex-col justify-end mx-auto" style="width: 390px; height: 844px; max-width: 390px; max-height: 844px; margin: 0 auto; padding: 0; background-color: #0F1115; color: #FFFFFF; font-family: 'Nunito', sans-serif; overflow: hidden; position: relative;">
+<!-- Dimmed S04 Background (Context Underlay) -->
+<div class="absolute inset-0 px-5 pt-8 opacity-25 filter blur-[1.5px] pointer-events-none">
+<div class="flex items-center justify-between mb-5">
+<div>
+<h1 class="text-2xl font-black text-white">Halo, Farhan</h1>
+<p class="text-sm font-semibold text-mutedText">Siap kerja kelompok hari ini?</p>
+</div>
+</div>
+<div class="bg-cardDark rounded-[20px] p-5 h-44 mb-6"></div>
+<div class="text-sm font-bold text-white mb-3">Sesi terakhir</div>
+<div class="bg-cardDark rounded-[20px] p-4 h-16 mb-2"></div>
+<div class="bg-cardDark rounded-[20px] p-4 h-16"></div>
+</div>
+<!-- Dimmed Overlay Backdrop -->
+<div class="absolute inset-0 bg-black/65 backdrop-blur-[2px]"></div>
+<!-- Bottom Sheet Container -->
+<div class="relative w-full bg-[#1A1D24] rounded-t-[28px] px-6 pt-3 pb-8 z-10 shadow-2xl border-t border-white/10">
+<!-- Sheet Drag Handle Indicator -->
+<div class="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4"></div>
+<!-- Sheet Header: Title & Close Icon -->
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-xl font-black text-white tracking-tight">Buat Ruang</h2>
+<button class="w-9 h-9 rounded-full bg-[#0F1115] flex items-center justify-center text-mutedText hover:text-white transition-colors">
+<svg class="w-5 h-5 stroke-[2.2]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+<!-- Form Content -->
+<div class="flex flex-col gap-5 mb-8">
+<!-- Field: Nama Ruang -->
+<div>
+<label class="block text-xs font-extrabold uppercase tracking-wider text-mutedText mb-2">Nama Ruang</label>
+<div class="relative">
+<input class="w-full h-[52px] bg-[#0F1115] text-white font-bold text-sm px-4 rounded-2xl border border-white/10 focus:border-limeAccent focus:outline-none placeholder:text-mutedText/60" placeholder="Contoh: Tugas Akhir HCI Kelompok 4" type="text"/>
+</div>
+<p class="text-[11px] font-semibold text-mutedText mt-1.5">
+          Nama ini akan menjadi judul ruang sesi untuk semua anggota tim.
+        </p>
+</div>
+<!-- Field: Durasi Pills -->
+<div>
+<div class="flex items-center justify-between mb-2.5">
+<label class="block text-xs font-extrabold uppercase tracking-wider text-mutedText">Durasi</label>
+<span class="text-xs font-extrabold text-limeAccent tab-num">45 menit terpilih</span>
+</div>
+<!-- 4 Duration Pills (25 / 45 / 60 / 90) -->
+<div class="grid grid-cols-4 gap-2">
+<!-- 25 Menit -->
+<div class="h-12 rounded-xl bg-[#0F1115] border border-white/5 flex flex-col items-center justify-center cursor-pointer">
+<span class="text-xs font-extrabold text-mutedText tab-num">25</span>
+<span class="text-[10px] font-bold text-mutedText">menit</span>
+</div>
+<!-- 45 Menit (Selected) -->
+<div class="h-12 rounded-xl bg-limeAccent text-limeDark flex flex-col items-center justify-center cursor-pointer shadow-md">
+<span class="text-xs font-black tab-num">45</span>
+<span class="text-[10px] font-extrabold">menit</span>
+</div>
+<!-- 60 Menit -->
+<div class="h-12 rounded-xl bg-[#0F1115] border border-white/5 flex flex-col items-center justify-center cursor-pointer">
+<span class="text-xs font-extrabold text-mutedText tab-num">60</span>
+<span class="text-[10px] font-bold text-mutedText">menit</span>
+</div>
+<!-- 90 Menit -->
+<div class="h-12 rounded-xl bg-[#0F1115] border border-white/5 flex flex-col items-center justify-center cursor-pointer">
+<span class="text-xs font-extrabold text-mutedText tab-num">90</span>
+<span class="text-[10px] font-bold text-mutedText">menit</span>
+</div>
+</div>
+</div>
+<!-- Info Rule Sesi -->
+<div class="p-3.5 rounded-2xl bg-[#0F1115] border border-white/5 flex items-start gap-3">
+<svg class="w-5 h-5 text-limeAccent shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="10"></circle>
+<line x1="12" x2="12" y1="8" y2="12"></line>
+<line x1="12" x2="12.01" y1="16" y2="16"></line>
+</svg>
+<span class="text-xs font-semibold text-mutedText leading-relaxed">
+          Semua anggota wajib menaruh ponsel di meja. Alarm bersama aktif begitu sesi dimulai.
+        </span>
+</div>
+</div>
+<!-- Primary Action Button -->
+<button class="btn-primary w-full text-base">
+      Buka Ruang
+    </button>
+</div>
+</body>
+</html>

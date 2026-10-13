@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_blank" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;800;900&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100%;min-height:100vh;margin:0;padding:0;background-color:#111317;color:#e2e2e8;overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}.pl-safe{padding-left:env(safe-area-inset-left,0px);}.pr-safe{padding-right:env(safe-area-inset-right,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "tertiary": "#ffffff", "surface-container-high": "#282a2e", "surface-container": "#1e2024", "primary-fixed": "#c5f331", "on-tertiary-container": "#c31f29", "on-error-container": "#ffdad6", "surface-variant": "#333539", "on-secondary-container": "#b3b5be", "on-background": "#e2e2e8", "on-secondary-fixed-variant": "#44474f", "surface-container-lowest": "#0c0e12", "tertiary-fixed-dim": "#ffb3ae", "surface": "#111317", "on-surface": "#e2e2e8", "secondary": "#c4c6d0", "background": "#111317", "on-error": "#690005", "inverse-primary": "#506600", "surface-container-highest": "#333539", "tertiary-container": "#ffdad7", "on-tertiary-fixed-variant": "#930014", "on-secondary-fixed": "#191c22", "surface-container-low": "#1a1c20", "on-primary-fixed": "#161f00", "error": "#ffb4ab", "primary-fixed-dim": "#aad600", "tertiary-fixed": "#ffdad7", "secondary-fixed": "#e0e2ec", "on-surface-variant": "#c4c9ae", "on-primary": "#283500", "on-primary-fixed-variant": "#3b4d00", "on-secondary": "#2d3038", "primary-container": "#c5f331", "surface-bright": "#37393e", "inverse-on-surface": "#2f3035", "surface-tint": "#aad600", "secondary-fixed-dim": "#c4c6d0", "secondary-container": "#44474f", "primary": "#ffffff", "on-tertiary-fixed": "#410004", "on-primary-container": "#556d00", "outline-variant": "#444934", "surface-dim": "#111317", "outline": "#8e937a", "inverse-surface": "#e2e2e8", "error-container": "#93000a", "on-tertiary": "#68000b" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-sm": "0.5rem", "space-xl": "2rem", "gutter": "1rem", "space-xs": "0.25rem", "margin": "1.25rem", "space-md": "1rem", "space-lg": "1.5rem" }, "fontFamily": { "body-sm": ["Nunito Sans"], "label-md": ["Nunito Sans"], "headline-md": ["Nunito Sans"], "body-md": ["Nunito Sans"], "body-lg": ["Nunito Sans"], "headline-sm": ["Nunito Sans"], "timer-display": ["Nunito Sans"], "label-lg": ["Nunito Sans"], "label-sm": ["Nunito Sans"], "headline-lg": ["Nunito Sans"] }, "fontSize": { "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "600" }], "label-md": ["13px", { "lineHeight": "16px", "letterSpacing": "0.4px", "fontWeight": "800" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.3px", "fontWeight": "800" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "600" }], "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "800" }], "timer-display": ["64px", { "lineHeight": "72px", "letterSpacing": "-1.5px", "fontWeight": "900" }], "label-lg": ["16px", { "lineHeight": "20px", "fontWeight": "800" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.6px", "fontWeight": "800" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.5px", "fontWeight": "900" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container"><main class="flex-1 flex flex-col relative w-full bg-surface pt-safe pb-safe pl-safe pr-safe"><div class="flex flex-col w-full px-margin pb-6 gap-y-4">
+<!-- Top Session Meta Bar -->
+<header class="flex items-center justify-between gap-2 pt-2 pb-1">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary-container"></span>
+</span>
+<span class="font-label-sm text-primary-container tracking-wider uppercase">Sensor Aktif</span>
+</div>
+<div class="flex-1 min-w-0 text-center px-1">
+<h1 class="font-headline-sm text-on-surface truncate text-xs">Tugas Akhir HCI Kelompok 4</h1>
+</div>
+<div class="flex items-center justify-center w-8 h-8 rounded-full bg-surface-container">
+<span class="material-symbols-outlined text-secondary text-base">lock</span>
+</div>
+</header>
+<!-- Timer & Motion Sensor Status Display -->
+<section class="flex flex-col items-center justify-center py-2">
+<div class="relative flex items-center justify-center w-64 h-64">
+<!-- High contrast countdown ring -->
+<svg aria-hidden="true" class="w-full h-full -rotate-90 transform" viewbox="0 0 256 256">
+<circle class="text-surface-container-high" cx="128" cy="128" fill="transparent" r="110" stroke="currentColor" stroke-width="10"></circle>
+<circle class="text-primary-container transition-all duration-1000 ease-linear" cx="128" cy="128" fill="transparent" id="timer-progress-ring" r="110" stroke="currentColor" stroke-dasharray="691.15" stroke-dashoffset="15.35" stroke-linecap="round" stroke-width="10"></circle>
+</svg>
+<!-- Center Telemetry Display -->
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+<span class="font-label-sm text-outline tracking-wider uppercase mb-1">Target Interval</span>
+<span class="font-timer-display text-primary tracking-tight tabular-nums select-none" id="session-countdown">44:58</span>
+<span class="font-body-sm text-secondary mt-0.5">dari 45 menit</span>
+</div>
+</div>
+<!-- Stability Real-Time Indicator -->
+<div class="mt-4 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container">
+<span class="material-symbols-outlined text-primary-container text-base">screen_lock_portrait</span>
+<span class="font-body-sm text-on-surface">HP terdeteksi stabil di meja</span>
+</div>
+</section>
+<!-- Group Accountability Card -->
+<section class="rounded-xl bg-surface-container p-4">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-on-surface">Anggota</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high font-label-sm text-secondary">3</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-sm text-secondary">2/3 Disiplin</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<!-- Member 1: User -->
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-3 min-w-0">
+<div class="relative w-9 h-9 flex-shrink-0">
+<img class="w-9 h-9 rounded-full object-cover" data-alt="Close up realistic portrait photo of an Indonesian male university student with dark short hair, natural calm expression, dark neutral studio lighting background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhkROUTJm8X4cWpRxm6GtFJA1lJDyPj4H91L8yWSLGSipScCneLNbAJCY4NNippjO8ylRCxH5h3Ve9mWGOgWlaGN8NcXI7BeRk_oPp7_TMgtpXm_ngbbCd4U3UYhwJ7FEsXjJ2G9SlYMaH3a8ljqvy1Q0PJzqn4ha2i4pu3YRulT12CUoA_zs1RQiGvf2tIfTsAvVlpLf4nh81FvnwVQ6DjeNFTWYUwmBx8n3KLhhBcr2feqBFm66iZg"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-on-surface text-sm truncate">Farhan Aditya</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest font-label-sm text-secondary">Kamu</span>
+</div>
+<p class="font-body-sm text-secondary truncate">Stationary • 00:02 lalu</p>
+</div>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-primary-container">
+<span class="material-symbols-outlined text-xs">verified</span>
+<span class="font-label-sm">Aman</span>
+</div>
+</div>
+<!-- Member 2: Peer Safe -->
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-3 min-w-0">
+<div class="relative w-9 h-9 flex-shrink-0">
+<img class="w-9 h-9 rounded-full object-cover" data-alt="Realistic documentary portrait photo of an Indonesian female university student with black hair tied back, quiet concentrated expression in soft library lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDgcGUstZPXOEMTr-dOnWbmI6PRBSn_tr21-YotjPon7Attvr1iL9i2RCvkZOB9B06F098T4EXe_XrD0nNHr12KH9wHAA9MVzPPHwnMgQ_M3mQczqnjleXdlAN-27JtNG0Xaz4cz8nKxEIyAP325BIAxrnylnGaiSR9Y13KgvhuL5eMDwaiq5I0OYmMdJX78nbXygH1fdDpoEZVw67NmfSOn4gBCj0Xl3vmkOQz2DbaF010BRDZohKeQ"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+</div>
+<div class="min-w-0">
+<span class="font-headline-sm text-on-surface text-sm block truncate">Sarah Nabila</span>
+<p class="font-body-sm text-secondary truncate">Stationary • Meja A2</p>
+</div>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-primary-container">
+<span class="material-symbols-outlined text-xs">verified</span>
+<span class="font-label-sm">Aman</span>
+</div>
+</div>
+<!-- Member 3: Warning Triggered -->
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-3 min-w-0">
+<div class="relative w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-surface-container-high text-on-surface font-label-md">
+            DP
+            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-on-tertiary-container animate-pulse"></span>
+</div>
+<div class="min-w-0">
+<span class="font-headline-sm text-on-surface text-sm block truncate">Dimas Pratama</span>
+<p class="font-body-sm text-tertiary-fixed-dim truncate">Gerakan giroskopik terdeteksi</p>
+</div>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-error-container text-on-error-container">
+<span class="material-symbols-outlined text-xs">warning</span>
+<span class="font-label-sm">Terangkat</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive Slide-to-Exit Zone -->
+<section class="flex flex-col gap-2 pt-1">
+<div class="relative w-full h-[54px] rounded-xl bg-surface-container overflow-hidden select-none touch-none flex items-center px-1" id="slider-container">
+<div class="absolute left-0 top-0 bottom-0 bg-surface-container-high w-0 transition-all duration-75 pointer-events-none" id="slider-progress-bg"></div>
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none px-12">
+<span class="font-label-md text-secondary tracking-wide transition-opacity" id="slider-label">
+          Geser untuk keluar ›››
+        </span>
+</div>
+<div aria-label="Geser untuk keluar" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="relative z-10 w-11 h-11 rounded-lg bg-primary-container text-on-primary-fixed flex items-center justify-center cursor-grab active:cursor-grabbing transition-transform duration-75 shadow-md" id="slider-thumb" role="slider">
+<span class="material-symbols-outlined text-xl">arrow_forward</span>
+</div>
+</div>
+<p class="font-body-sm text-secondary text-center px-3">
+      Keluar awal menandai status ke seluruh tim dan membatalkan rekor fokus harian.
+    </p>
+<!-- Host Controlled Termination Trigger -->
+<div class="pt-1 flex justify-center">
+<button class="font-label-sm text-tertiary-fixed-dim hover:text-error transition-colors px-4 py-2 focus:outline-none" id="end-session-modal-btn" type="button">
+        Akhiri Sesi untuk Semua
+      </button>
+</div>
+</section>
+<!-- Confirmation Drawer/Dialog for Host Action -->
+<div class="fixed inset-0 z-50 flex items-end justify-center bg-surface-container-lowest/70 backdrop-blur-sm hidden p-margin pb-safe" id="confirm-modal">
+<div class="w-full max-w-sm rounded-xl bg-surface-container p-5 flex flex-col gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-error-container text-on-error-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-xl">gavel</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-on-surface text-base">Hentikan Sesi Bersama?</h2>
+<p class="font-body-sm text-secondary">Semua anggota akan otomatis terputus dari mode fokus.</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 mt-1">
+<button class="w-full h-[48px] rounded-lg bg-error-container text-on-error-container font-label-md transition-colors" id="confirm-terminate-btn" type="button">
+          Hentikan Sesi Sekarang
+        </button>
+<button class="w-full h-[48px] rounded-lg bg-surface-container-high text-on-surface font-label-md" id="cancel-modal-btn" type="button">
+          Lanjutkan Sesi
+        </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function () {
+    // Dynamic Slide to Exit Interaction
+    const container = document.getElementById('slider-container');
+    const thumb = document.getElementById('slider-thumb');
+    const progressBg = document.getElementById('slider-progress-bg');
+    const label = document.getElementById('slider-label');
+
+    if (container && thumb) {
+      let isDragging = false;
+      let startX = 0;
+      let currentX = 0;
+
+      const getMaxOffset = () => container.clientWidth - thumb.clientWidth - 8;
+
+      const onStart = (e) => {
+        isDragging = true;
+        startX = (e.touches ? e.touches[0].clientX : e.clientX) - currentX;
+      };
+
+      const onMove = (e) => {
+        if (!isDragging) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const max = getMaxOffset();
+        let nextX = clientX - startX;
+        nextX = Math.max(0, Math.min(nextX, max));
+        currentX = nextX;
+
+        thumb.style.transform = `translateX(${currentX}px)`;
+        progressBg.style.width = `${currentX + thumb.clientWidth / 2}px`;
+
+        const ratio = currentX / max;
+        label.style.opacity = `${1 - ratio * 1.5}`;
+
+        if (ratio >= 0.96) {
+          triggerExit();
+        }
+      };
+
+      const onEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        const max = getMaxOffset();
+        if (currentX / max < 0.96) {
+          currentX = 0;
+          thumb.style.transform = 'translateX(0px)';
+          progressBg.style.width = '0px';
+          label.style.opacity = '1';
+        }
+      };
+
+      const triggerExit = () => {
+        isDragging = false;
+        label.textContent = 'Keluar dari sesi...';
+        label.style.opacity = '1';
+        thumb.style.transform = `translateX(${getMaxOffset()}px)`;
+        progressBg.style.width = '100%';
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+      };
+
+      thumb.addEventListener('mousedown', onStart);
+      thumb.addEventListener('touchstart', onStart, { passive: true });
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('touchmove', onMove, { passive: false });
+      window.addEventListener('mouseup', onEnd);
+      window.addEventListener('touchend', onEnd);
+    }
+
+    // Modal Trigger for Group Session End
+    const modal = document.getElementById('confirm-modal');
+    const openBtn = document.getElementById('end-session-modal-btn');
+    const cancelBtn = document.getElementById('cancel-modal-btn');
+    const confirmBtn = document.getElementById('confirm-terminate-btn');
+
+    if (openBtn && modal) {
+      openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+      cancelBtn && cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+      confirmBtn &&
+        confirmBtn.addEventListener('click', () => {
+          modal.classList.add('hidden');
+          const countdown = document.getElementById('session-countdown');
+          if (countdown) countdown.textContent = 'SELESAI';
+        });
+    }
+
+    // Simulated Timer Countdown Tick
+    let remainingSeconds = 44 * 60 + 58;
+    const countdownEl = document.getElementById('session-countdown');
+    const ringEl = document.getElementById('timer-progress-ring');
+    const totalSeconds = 45 * 60;
+    const circumference = 691.15;
+
+    setInterval(() => {
+      if (remainingSeconds > 0) {
+        remainingSeconds--;
+        const mins = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
+        const secs = String(remainingSeconds % 60).padStart(2, '0');
+        if (countdownEl) countdownEl.textContent = `${mins}:${secs}`;
+
+        if (ringEl) {
+          const ratio = (totalSeconds - remainingSeconds) / totalSeconds;
+          const offset = circumference * ratio;
+          ringEl.style.strokeDashoffset = `${offset}`;
+        }
+      }
+    }, 1000);
+  })();
+</script></main></body></html>
