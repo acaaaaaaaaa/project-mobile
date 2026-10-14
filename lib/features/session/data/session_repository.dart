@@ -113,7 +113,7 @@ class SessionRepository {
 
   /// Stream seluruh riwayat sesi pengguna (userSessions/{uid}) terurut terbaru lebih dulu
   Stream<List<UserSessionRecord>> watchUserSessions(String uid) async* {
-    // Sinkronisasi otomatis dari userRooms untuk ruang yang telah selesai (misal Tugas Akhir)
+    // Sinkronisasi otomatis: pastikan ruang yang belum selesai dibersihkan dari userSessions
     try {
       final userRoomsSnap = await _db.ref('userRooms/$uid').get().timeout(const Duration(seconds: 3));
       if (userRoomsSnap.exists && userRoomsSnap.value is Map) {
@@ -122,9 +122,12 @@ class SessionRepository {
           final rId = entry.key.toString();
           final rVal = entry.value;
           if (rVal is Map) {
-            final status = rVal['status']?.toString();
+            final status = rVal['status']?.toString().toLowerCase();
             final name = rVal['name']?.toString() ?? '';
-            if (status == 'selesai' || name.toLowerCase().contains('tugas akhir')) {
+            if (status != 'selesai') {
+              // Jika ruang belum selesai (masih lobi/berjalan), pastikan TIDAK ADA di userSessions
+              _db.ref('userSessions/$uid/$rId').remove();
+            } else if (status == 'selesai' || name.toLowerCase().contains('tugas akhir')) {
               final code = rVal['code']?.toString() ?? '';
               final scheduledStart = (rVal['scheduledStart'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch;
               final durationMin = (rVal['durationMin'] as num?)?.toInt() ?? 45;
@@ -160,7 +163,10 @@ class SessionRepository {
       final list = <UserSessionRecord>[];
       map.forEach((key, val) {
         if (val is Map) {
-          list.add(UserSessionRecord.fromMap(key.toString(), val));
+          final rec = UserSessionRecord.fromMap(key.toString(), val);
+          if (rec.status.toLowerCase() == 'selesai') {
+            list.add(rec);
+          }
         }
       });
       list.sort((a, b) => b.completedAt.compareTo(a.completedAt));

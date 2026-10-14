@@ -11,7 +11,9 @@ import '../domain/room_models.dart';
 import '../presentation/room_controller.dart';
 
 class S05SheetBuatRuang extends ConsumerStatefulWidget {
-  const S05SheetBuatRuang({super.key});
+  final DateTime? initialDate;
+
+  const S05SheetBuatRuang({super.key, this.initialDate});
 
   @override
   ConsumerState<S05SheetBuatRuang> createState() => _S05SheetBuatRuangState();
@@ -20,14 +22,24 @@ class S05SheetBuatRuang extends ConsumerStatefulWidget {
 class _S05SheetBuatRuangState extends ConsumerState<S05SheetBuatRuang> {
   final _titleController = TextEditingController();
   final _noteController = TextEditingController();
-  DateTime _selectedDate = DateTime.now();
-  TimeOfDay _startTime = const TimeOfDay(hour: 14, minute: 0);
-  TimeOfDay _endTime = const TimeOfDay(hour: 16, minute: 0);
+  late DateTime _selectedDate;
+  late TimeOfDay _startTime;
+  late TimeOfDay _endTime;
   String _selectedReminder = '15 menit sebelum';
 
   bool _isLoading = false;
   String? _errorMessage;
   RoomModel? _createdRoom;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = widget.initialDate ?? DateTime.now();
+    final nowTime = TimeOfDay.now();
+    _startTime = nowTime;
+    final endHour = (nowTime.hour + 1) % 24;
+    _endTime = TimeOfDay(hour: endHour, minute: nowTime.minute);
+  }
 
   @override
   void dispose() {

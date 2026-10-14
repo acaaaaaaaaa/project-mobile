@@ -147,21 +147,6 @@ class RoomRepository {
         'reminder': reminder ?? '',
         'createdAt': now,
       },
-      'userSessions/${user.uid}/$roomId': {
-        'roomId': roomId,
-        'roomName': cleanName,
-        'roomCode': assignedCode,
-        'startAt': startTimestamp,
-        'completedAt': startTimestamp + (durationMinutes * 60 * 1000),
-        'durationDoneMin': durationMinutes,
-        'violationCount': 0,
-        'endedHow': 'host',
-        'isCreatedByMe': true,
-        'status': 'Selesai',
-        'memberCount': 1,
-        'note': note ?? '',
-        'meetingLink': 'https://kerkom.app/j/$assignedCode',
-      },
     };
 
     try {

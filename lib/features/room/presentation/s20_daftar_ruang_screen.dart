@@ -322,9 +322,14 @@ class _S20DaftarRuangScreenState extends ConsumerState<S20DaftarRuangScreen> {
               ),
               ElevatedButton.icon(
                 onPressed: () {
+                  final targetDate = DateTime(
+                    _currentMonth.year,
+                    _currentMonth.month,
+                    _selectedDay,
+                  );
                   BottomSheetHelper.show(
                     context: context,
-                    child: const S05SheetBuatRuang(),
+                    child: S05SheetBuatRuang(initialDate: targetDate),
                   );
                 },
                 icon: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
@@ -725,8 +730,11 @@ class _S20DaftarRuangScreenState extends ConsumerState<S20DaftarRuangScreen> {
               final todayStart = DateTime(now.year, now.month, now.day);
               final todayEnd = todayStart.add(const Duration(days: 1));
 
-              // 1. Filter Tanggal & Waktu
-              var filtered = rooms.where((r) {
+              // 1. Filter Hanya Ruang Aktif / Belum Selesai (ruang selesai pindah ke Riwayat)
+              final activeRooms = rooms.where((r) => r.status.toLowerCase() != 'selesai').toList();
+
+              // 2. Filter Tanggal & Waktu
+              var filtered = activeRooms.where((r) {
                 final rDate = DateTime.fromMillisecondsSinceEpoch(r.scheduledStart);
 
                 switch (_selectedFilter) {

@@ -126,17 +126,60 @@ class _S22NotifikasiScreenState extends ConsumerState<S22NotifikasiScreen> {
 
     final list = <NotificationItem>[];
 
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
     // 1. Notifikasi dari ruang aktif milik pengguna
     if (userRooms.isNotEmpty) {
       final activeRooms = userRooms.where((r) => r.status != 'selesai').toList();
       for (final room in activeRooms) {
+        final roomDate = DateTime.fromMillisecondsSinceEpoch(room.scheduledStart);
+        final roomDay = DateTime(roomDate.year, roomDate.month, roomDate.day);
+        final diffDays = roomDay.difference(today).inDays;
+        final diffMs = room.scheduledStart - now.millisecondsSinceEpoch;
+        final timeOfDayStr = '${roomDate.hour.toString().padLeft(2, '0')}:${roomDate.minute.toString().padLeft(2, '0')}';
+
+        String timeStr;
+        String groupStr = 'Hari ini';
+
+        if (diffDays == 0) {
+          groupStr = 'Hari ini';
+          if (diffMs > 0) {
+            final diffMinutes = (diffMs / 60000).round();
+            if (diffMinutes < 60) {
+              timeStr = '$diffMinutes menit lagi';
+            } else {
+              final hours = (diffMinutes / 60).floor();
+              final mins = diffMinutes % 60;
+              timeStr = mins > 0 ? '$hours jam $mins menit lagi' : '$hours jam lagi';
+            }
+          } else {
+            timeStr = 'Hari ini, $timeOfDayStr';
+          }
+        } else if (diffDays == 1) {
+          groupStr = 'Hari ini';
+          timeStr = 'Besok, $timeOfDayStr';
+        } else if (diffDays > 1) {
+          groupStr = 'Hari ini';
+          final monthName = months[roomDate.month - 1];
+          timeStr = '${roomDate.day} $monthName, $timeOfDayStr ($diffDays hari lagi)';
+        } else if (diffDays == -1) {
+          groupStr = 'Kemarin';
+          timeStr = 'Kemarin, $timeOfDayStr';
+        } else {
+          groupStr = 'Kemarin';
+          final monthName = months[roomDate.month - 1];
+          timeStr = '${roomDate.day} $monthName, $timeOfDayStr';
+        }
+
         list.add(
           NotificationItem(
             id: 'start_${room.roomId}',
             title: 'Sesi akan dimulai: ${room.name}',
-            message: 'Ruang "${room.name}" dijadwalkan segera. Klik untuk masuk ke lobi ruangan.',
-            time: '15 menit lagi',
-            group: 'Hari ini',
+            message: 'Ruang "${room.name}" dijadwalkan pada $timeStr. Klik untuk masuk ke lobi ruangan.',
+            time: timeStr,
+            group: groupStr,
             category: NotificationCategory.sessionStarting,
             route: '/lobby/${room.roomId}',
           ),
@@ -161,7 +204,7 @@ class _S22NotifikasiScreenState extends ConsumerState<S22NotifikasiScreen> {
           id: 'room_${room.id}',
           title: 'Sesi akan dimulai: ${room.name}',
           message: 'Ruang "${room.name}" siap digunakan. Klik untuk masuk ke lobi.',
-          time: '30 menit lalu',
+          time: 'Segera',
           group: 'Hari ini',
           category: NotificationCategory.sessionStarting,
           route: '/lobby/${room.id}',

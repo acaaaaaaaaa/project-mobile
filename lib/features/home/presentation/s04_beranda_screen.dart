@@ -573,7 +573,10 @@ class S04BerandaScreen extends ConsumerWidget {
   Widget _buildScheduleList(AsyncValue<List<UserRoomIndex>> userRoomsAsync, BuildContext context) {
     return userRoomsAsync.when(
       data: (rooms) {
-        if (rooms.isEmpty) {
+        // Hanya tampilkan ruangan aktif (belum selesai) untuk jadwal terdekat
+        final activeRooms = rooms.where((r) => r.status.toLowerCase() != 'selesai').toList();
+
+        if (activeRooms.isEmpty) {
           return Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
@@ -587,7 +590,7 @@ class S04BerandaScreen extends ConsumerWidget {
                 const Icon(Icons.calendar_today_outlined, size: 38, color: AppColors.textMuted),
                 const SizedBox(height: 10),
                 Text(
-                  'Belum ada ruangan yang dibuat',
+                  'Belum ada jadwal ruangan aktif',
                   style: AppTheme.bodyMedium.copyWith(
                     color: AppColors.navy,
                     fontWeight: FontWeight.w800,
@@ -610,8 +613,8 @@ class S04BerandaScreen extends ConsumerWidget {
         final now = DateTime.now();
         final today = DateTime(now.year, now.month, now.day);
 
-        // Urutkan jadwal
-        final sorted = [...rooms]..sort((a, b) => b.scheduledStart.compareTo(a.scheduledStart));
+        // Urutkan jadwal terdekat: jadwal yang paling dekat dari hari & jam saat ini berada di paling atas
+        final sorted = [...activeRooms]..sort((a, b) => a.scheduledStart.compareTo(b.scheduledStart));
         final displayList = sorted.take(5).toList();
 
         return Column(

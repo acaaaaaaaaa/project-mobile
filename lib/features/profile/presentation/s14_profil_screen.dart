@@ -244,6 +244,11 @@ class S14ProfilScreen extends ConsumerWidget {
                       ? '$activeDaysCount hari aktif minggu ini'
                       : 'Mulai sesi fokus minggu ini';
 
+                  final now = DateTime.now();
+                  // 1 = Senin, 7 = Minggu -> index 0..6
+                  final todayWeekdayIndex = now.weekday - 1;
+                  const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
                   return AppCard(
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                     child: Column(
@@ -266,15 +271,13 @@ class S14ProfilScreen extends ConsumerWidget {
                         const SizedBox(height: 14),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _StreakDay(day: 'Sen', isActive: stats.weeklyActivity[0]),
-                            _StreakDay(day: 'Sel', isActive: stats.weeklyActivity[1]),
-                            _StreakDay(day: 'Rab', isActive: stats.weeklyActivity[2]),
-                            _StreakDay(day: 'Kam', isActive: stats.weeklyActivity[3]),
-                            _StreakDay(day: 'Jum', isActive: stats.weeklyActivity[4]),
-                            _StreakDay(day: 'Sab', isActive: stats.weeklyActivity[5]),
-                            _StreakDay(day: 'Min', isActive: stats.weeklyActivity[6]),
-                          ],
+                          children: List.generate(7, (i) {
+                            return _StreakDay(
+                              day: days[i],
+                              isActive: stats.weeklyActivity[i],
+                              isPastOrToday: i <= todayWeekdayIndex,
+                            );
+                          }),
                         ),
                       ],
                     ),
@@ -481,25 +484,70 @@ class S14ProfilScreen extends ConsumerWidget {
 class _StreakDay extends StatelessWidget {
   final String day;
   final bool isActive;
+  final bool isPastOrToday;
 
-  const _StreakDay({required this.day, required this.isActive});
+  const _StreakDay({
+    required this.day,
+    required this.isActive,
+    required this.isPastOrToday,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isActive ? AppColors.primary : const Color(0xFFF1F5F9),
-            border: Border.all(
-              color: isActive ? AppColors.primary : const Color(0xFFE2E8F0),
-              width: 1.5,
-            ),
+    Widget indicator;
+    if (!isPastOrToday) {
+      // Hari yang belum tiba (masih kosong)
+      indicator = Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: const Color(0xFFF8FAFC),
+          border: Border.all(
+            color: const Color(0xFFE2E8F0),
+            width: 1.5,
           ),
         ),
+      );
+    } else if (isActive) {
+      // Ada kegiatan/streak di hari itu: tampilkan ceklis-streak.png
+      indicator = Image.asset(
+        'assets/images/ceklis-streak.png',
+        width: 28,
+        height: 28,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: 28,
+          height: 28,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primary,
+          ),
+          child: const Icon(Icons.check, size: 16, color: Colors.white),
+        ),
+      );
+    } else {
+      // Hari yang sudah lewat tapi tidak ada kegiatan: tampilkan silang-streak.png
+      indicator = Image.asset(
+        'assets/images/silang-streak.png',
+        width: 28,
+        height: 28,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: 28,
+          height: 28,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.red,
+          ),
+          child: const Icon(Icons.close, size: 16, color: Colors.white),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        indicator,
         const SizedBox(height: 6),
         Text(
           day,
