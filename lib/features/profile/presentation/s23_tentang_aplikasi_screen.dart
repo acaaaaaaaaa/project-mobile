@@ -97,7 +97,128 @@ class S23TentangAplikasiScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
+
+              // 0. Identitas Pengembang & Akademik
+              _buildSectionCard(
+                title: 'Identitas Pengembang',
+                icon: Icons.school_rounded,
+                content: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Mata Kuliah & Dosen Info Box
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFDBEAFE)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: RichText(
+                                  text: TextSpan(
+                                    style: AppTheme.bodySmall.copyWith(color: AppColors.navy),
+                                    children: const [
+                                      TextSpan(text: 'Mata Kuliah: ', style: TextStyle(fontWeight: FontWeight.w800)),
+                                      TextSpan(text: 'Manajemen Inovasi'),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.person_pin_rounded, color: AppColors.primary, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: RichText(
+                                  text: TextSpan(
+                                    style: AppTheme.bodySmall.copyWith(color: AppColors.navy),
+                                    children: const [
+                                      TextSpan(text: 'Dosen Pengampu: ', style: TextStyle(fontWeight: FontWeight.w800)),
+                                      TextSpan(text: "Siti Mas'ula, M.Pd"),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // Tim Pengembang Header
+                    Text(
+                      'Tim Pengembang',
+                      style: AppTheme.labelMedium.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Anggota Tim List
+                    ...[
+                      'Putri Yuni Aqsyah',
+                      'Muhammad Romadhoni Al Bukhori',
+                      'Putu Alvin Mahendra Putra',
+                    ].asMap().entries.map((entry) {
+                      final idx = entry.key + 1;
+                      final name = entry.value;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '$idx',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                name,
+                                style: AppTheme.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
 
               // 1. Fitur Utama (Direct reading, no redirect)
               _buildSectionCard(

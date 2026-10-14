@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -59,6 +61,63 @@ class S22NotifikasiScreen extends ConsumerStatefulWidget {
 
 class _S22NotifikasiScreenState extends ConsumerState<S22NotifikasiScreen> {
   final Set<String> _readIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReadNotifications();
+  }
+
+  Future<void> _loadReadNotifications() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+
+      final snap = await FirebaseDatabase.instance.ref('userNotifications/$uid').get();
+      if (snap.exists && snap.value is Map) {
+        final map = snap.value as Map;
+        final loaded = <String>{};
+        map.forEach((k, v) {
+          if (v == true || v == 'read') loaded.add(k.toString());
+        });
+        if (mounted) {
+          setState(() {
+            _readIds.addAll(loaded);
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _markAsRead(String id) async {
+    setState(() {
+      _readIds.add(id);
+    });
+
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        await FirebaseDatabase.instance.ref('userNotifications/$uid/$id').set(true);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _markAllAsRead(List<NotificationItem> items) async {
+    setState(() {
+      _readIds.addAll(items.map((n) => n.id));
+    });
+
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final updates = <String, dynamic>{};
+        for (final item in items) {
+          updates[item.id] = true;
+        }
+        await FirebaseDatabase.instance.ref('userNotifications/$uid').update(updates);
+      }
+    } catch (_) {}
+  }
 
   List<NotificationItem> _generateNotifications() {
     final userRooms = ref.watch(userRoomsStreamProvider).value ?? [];
@@ -181,9 +240,7 @@ class _S22NotifikasiScreenState extends ConsumerState<S22NotifikasiScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              setState(() {
-                _readIds.addAll(notifications.map((n) => n.id));
-              });
+              _markAllAsRead(notifications);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Semua notifikasi ditandai dibaca'),
@@ -220,6 +277,88 @@ class _S22NotifikasiScreenState extends ConsumerState<S22NotifikasiScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  void _showNotificationDetail(NotificationItem item, ({IconData icon, Color color, Color bg}) style) {
+    _markAsRead(item.id);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: style.bg,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(style.icon, color: style.color, size: 20),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                item.title,
+                style: AppTheme.headlineSmall.copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.navy,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.access_time_rounded, size: 14, color: AppColors.textMuted),
+                const SizedBox(width: 4),
+                Text(
+                  item.time,
+                  style: AppTheme.labelSmall.copyWith(color: AppColors.textMuted, fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              item.message,
+              style: AppTheme.bodyMedium.copyWith(color: AppColors.textPrimary, height: 1.4),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup', style: TextStyle(color: AppColors.textMuted)),
+          ),
+          if (item.route != null)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Navigator.pop(ctx);
+                final route = item.route!;
+                if (route.startsWith('/lobby/') ||
+                    route.startsWith('/active-session/') ||
+                    route.startsWith('/history-detail/') ||
+                    route.startsWith('/sensor-sensitivity')) {
+                  context.push(route);
+                } else {
+                  context.go(route);
+                }
+              },
+              child: const Text('Buka Halaman'),
+            ),
+        ],
       ),
     );
   }
@@ -272,22 +411,7 @@ class _S22NotifikasiScreenState extends ConsumerState<S22NotifikasiScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       child: InkWell(
-        onTap: () {
-          setState(() {
-            _readIds.add(item.id);
-          });
-          if (item.route != null) {
-            final route = item.route!;
-            if (route.startsWith('/lobby/') ||
-                route.startsWith('/active-session/') ||
-                route.startsWith('/history-detail/') ||
-                route.startsWith('/sensor-sensitivity')) {
-              context.push(route);
-            } else {
-              context.go(route);
-            }
-          }
-        },
+        onTap: () => _showNotificationDetail(item, style),
         borderRadius: BorderRadius.circular(16),
         child: AppCard(
           padding: const EdgeInsets.all(14),

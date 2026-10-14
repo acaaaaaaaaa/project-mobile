@@ -328,24 +328,24 @@ class _S15EditProfilScreenState extends ConsumerState<S15EditProfilScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Avatar Preview & Controls Card
+              // Avatar Preview Card
               AppCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 child: Column(
                   children: [
                     Center(
-                      child: Stack(
-                        children: [
-                          AvatarCircle(
-                            name: _nameController.text.isNotEmpty ? _nameController.text : 'Pengguna',
-                            photoUrl: _selectedPhotoUrl.isNotEmpty ? _selectedPhotoUrl : null,
-                            size: 96,
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: GestureDetector(
-                              onTap: _showPhotoOptionsSheet,
+                      child: GestureDetector(
+                        onTap: _showPhotoOptionsSheet,
+                        child: Stack(
+                          children: [
+                            AvatarCircle(
+                              name: _nameController.text.isNotEmpty ? _nameController.text : 'Pengguna',
+                              photoUrl: _selectedPhotoUrl.isNotEmpty ? _selectedPhotoUrl : null,
+                              size: 100,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
                               child: Container(
                                 width: 32,
                                 height: 32,
@@ -368,50 +368,17 @@ class _S15EditProfilScreenState extends ConsumerState<S15EditProfilScreen> {
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: _pickImageFromDevice,
-                          icon: const Icon(Icons.upload_file_rounded, size: 16),
-                          label: const Text('Unggah Foto'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton.icon(
-                          onPressed: _showAvatarPicker,
-                          icon: const Icon(Icons.face_retouching_natural_rounded, size: 16),
-                          label: const Text('Pilih Avatar'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                            side: const BorderSide(color: Color(0xFFE2EDF9)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          ),
-                        ),
-                        if (_selectedPhotoUrl.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _selectedPhotoUrl = '';
-                                _photoUrlController.clear();
-                              });
-                            },
-                            child: const Text('Hapus', style: TextStyle(color: AppColors.red, fontSize: 13)),
-                          ),
-                        ],
-                      ],
+                    const SizedBox(height: 12),
+                    Text(
+                      'Ketuk foto atau ikon pena untuk mengganti foto profil',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),

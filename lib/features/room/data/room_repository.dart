@@ -36,6 +36,7 @@ class RoomRepository {
     required int durationMinutes,
     String? reminder,
     String? note,
+    int? scheduledStart,
   }) async {
     final user = _auth.currentUser;
     if (user == null) throw 'Pengguna belum terautentikasi';
@@ -99,6 +100,8 @@ class RoomRepository {
     assignedCode ??= _generateRandomCandidateCode();
 
     final now = DateTime.now().millisecondsSinceEpoch;
+    final startTimestamp = scheduledStart ?? now;
+
     final room = RoomModel(
       id: roomId,
       code: assignedCode,
@@ -107,7 +110,7 @@ class RoomRepository {
       durationMinutes: durationMinutes,
       status: 'lobi',
       createdAt: now,
-      startAt: now,
+      startAt: startTimestamp,
       remainingSeconds: durationMinutes * 60,
       reminder: reminder,
       note: note,
@@ -136,7 +139,7 @@ class RoomRepository {
         'roomId': roomId,
         'name': cleanName,
         'code': assignedCode,
-        'scheduledStart': now,
+        'scheduledStart': startTimestamp,
         'durationMin': durationMinutes,
         'role': 'host',
         'status': 'lobi',
@@ -148,8 +151,8 @@ class RoomRepository {
         'roomId': roomId,
         'roomName': cleanName,
         'roomCode': assignedCode,
-        'startAt': now,
-        'completedAt': now + (durationMinutes * 60 * 1000),
+        'startAt': startTimestamp,
+        'completedAt': startTimestamp + (durationMinutes * 60 * 1000),
         'durationDoneMin': durationMinutes,
         'violationCount': 0,
         'endedHow': 'host',
@@ -423,16 +426,15 @@ class RoomRepository {
     });
   }
 
-  /// Keluar dari room dan transfer host jika yang keluar adalah host
+  /// Keluar dari room (hanya pengguna yang keluar, TIDAK mengakhiri sesi ruangan)
   Future<void> leaveRoom(String roomId) async {
     final uid = currentUid;
     if (uid == null) return;
 
     // 1. Set state member menjadi 'keluar'
     await _db.ref('roomMembers/$roomId/$uid/state').set('keluar');
-    // 2. Hapus status active room dan room index pengguna
+    // 2. Hapus status active room pengguna saat ini
     await _db.ref('userActiveRoom/$uid').remove();
-    await _db.ref('userRooms/$uid/$roomId').remove();
 
     // 3. Cek apakah user adalah host
     final roomSnap = await _db.ref('rooms/$roomId').get();
@@ -440,38 +442,86 @@ class RoomRepository {
       final roomData = roomSnap.value as Map;
       final hostUid = roomData['hostUid']?.toString();
 
-      if (hostUid == uid) {
-        // Ambil anggota tersisa yang belum keluar
-        final membersSnap = await _db.ref('roomMembers/$roomId').get();
-        if (membersSnap.exists && membersSnap.value is Map) {
-          final membersMap = membersSnap.value as Map;
-          RoomMemberModel? nextHost;
+      if (hostUid != uid) {
+        // Jika bukan host, hapus dari userRooms pengguna (karena keluar/batal partisipasi)
+        await _db.ref('userRooms/$uid/$roomId').remove();
+      }
 
-          membersMap.forEach((k, v) {
-            if (v is Map && k != uid) {
-              final m = RoomMemberModel.fromMap(k.toString(), v);
-              if (m.state != 'keluar') {
-                if (nextHost == null || m.joinedAt < nextHost!.joinedAt) {
-                  nextHost = m;
-                }
+      // Jika ada anggota lain yang aktif, kita bisa delegasikan host ke anggota berikutnya
+      final membersSnap = await _db.ref('roomMembers/$roomId').get();
+      if (membersSnap.exists && membersSnap.value is Map) {
+        final membersMap = membersSnap.value as Map;
+        RoomMemberModel? nextHost;
+
+        membersMap.forEach((k, v) {
+          if (v is Map && k != uid) {
+            final m = RoomMemberModel.fromMap(k.toString(), v);
+            if (m.state != 'keluar') {
+              if (nextHost == null || m.joinedAt < nextHost!.joinedAt) {
+                nextHost = m;
               }
             }
-          });
-
-          if (nextHost != null) {
-            // Transfer host ke anggota terawal berikutnya
-            await _db.ref('rooms/$roomId/hostUid').set(nextHost!.uid);
-            await _db.ref('roomMembers/$roomId/${nextHost!.uid}/isHost').set(true);
-            await _db.ref('roomMembers/$roomId/$uid/isHost').set(false);
-          } else {
-            // Tidak ada anggota tersisa, nonaktifkan room dan kodenya
-            await _db.ref('rooms/$roomId/status').set('selesai');
-            final code = roomData['code']?.toString();
-            if (code != null) {
-              await _db.ref('roomCodes/$code/active').set(false);
-            }
           }
+        });
+
+        if (hostUid == uid && nextHost != null) {
+          // Transfer host ke anggota terawal berikutnya
+          await _db.ref('rooms/$roomId/hostUid').set(nextHost!.uid);
+          await _db.ref('roomMembers/$roomId/${nextHost!.uid}/isHost').set(true);
+          await _db.ref('roomMembers/$roomId/$uid/isHost').set(false);
+          await _db.ref('userRooms/${nextHost!.uid}/$roomId/role').set('host');
         }
+        // PERHATIAN: JANGAN pernah mengubah status room menjadi 'selesai' di sini!
+        // Sesi hanya berakhir ketika tombol 'Akhiri Ruang' ditekan atau sesuai jam yang di-set.
+      }
+    }
+  }
+
+  /// Eksplisit mengakhiri ruangan (hanya dipanggil saat klik button "Akhiri Ruang")
+  Future<void> endRoom(String roomId) async {
+    final uid = currentUid;
+    final roomSnap = await _db.ref('rooms/$roomId').get();
+    if (!roomSnap.exists || roomSnap.value is! Map) return;
+
+    final roomData = roomSnap.value as Map;
+    final code = roomData['code']?.toString();
+    final name = roomData['name']?.toString() ?? 'Ruang Belajar';
+    final durationMin = (roomData['durationMinutes'] as num?)?.toInt() ?? 45;
+    final startAt = (roomData['startAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    // 1. Ubah status ruangan menjadi selesai
+    await _db.ref('rooms/$roomId/status').set('selesai');
+
+    // 2. Nonaktifkan kode ruangan
+    if (code != null) {
+      await _db.ref('roomCodes/$code/active').set(false);
+    }
+
+    // 3. Update status userRooms dan bersihkan userActiveRoom untuk semua anggota
+    final membersSnap = await _db.ref('roomMembers/$roomId').get();
+    if (membersSnap.exists && membersSnap.value is Map) {
+      final membersMap = membersSnap.value as Map;
+      for (final entry in membersMap.entries) {
+        final mUid = entry.key.toString();
+        await _db.ref('userActiveRoom/$mUid').remove();
+        await _db.ref('userRooms/$mUid/$roomId/status').set('selesai');
+
+        // Pastikan tersimpan di riwayat sesi
+        await _db.ref('userSessions/$mUid/$roomId').set({
+          'roomId': roomId,
+          'roomName': name,
+          'roomCode': code ?? '',
+          'startAt': startAt,
+          'completedAt': now,
+          'durationDoneMin': ((now - startAt) / 60000).ceil().clamp(1, durationMin),
+          'violationCount': 0,
+          'endedHow': 'host',
+          'isCreatedByMe': mUid == uid,
+          'status': 'Selesai',
+          'memberCount': membersMap.length,
+          'meetingLink': code != null ? 'https://kerkom.app/j/$code' : '',
+        });
       }
     }
   }

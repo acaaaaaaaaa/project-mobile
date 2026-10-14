@@ -608,8 +608,9 @@ class S04BerandaScreen extends ConsumerWidget {
 
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
 
-        // Urutkan jadwal terdekat
+        // Urutkan jadwal
         final sorted = [...rooms]..sort((a, b) => b.scheduledStart.compareTo(a.scheduledStart));
         final displayList = sorted.take(5).toList();
 
@@ -619,10 +620,18 @@ class S04BerandaScreen extends ConsumerWidget {
             final dayStr = date.day.toString().padLeft(2, '0');
             final monthStr = months[date.month - 1];
 
-            final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
-            final isTomorrow = date.year == now.year && date.month == now.month && date.day == now.day + 1;
+            final roomDay = DateTime(date.year, date.month, date.day);
+            final diffDays = roomDay.difference(today).inDays;
+            final isToday = diffDays == 0;
+            final isTomorrow = diffDays == 1;
+            final isYesterday = diffDays == -1;
+
             final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-            final prefix = isToday ? 'Hari Ini, $timeStr' : (isTomorrow ? 'Besok, $timeStr' : '$dayStr $monthStr, $timeStr');
+            final prefix = isToday
+                ? 'Hari Ini, $timeStr'
+                : (isTomorrow
+                    ? 'Besok, $timeStr'
+                    : (isYesterday ? 'Kemarin, $timeStr' : '$dayStr $monthStr, $timeStr'));
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 10.0),

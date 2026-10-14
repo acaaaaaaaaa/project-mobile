@@ -122,11 +122,21 @@ class _S05SheetBuatRuangState extends ConsumerState<S05SheetBuatRuang> {
     try {
       final repo = ref.read(roomRepositoryProvider);
       final duration = _calculateDurationMinutes();
+      final scheduledDateTime = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _startTime.hour,
+        _startTime.minute,
+      );
+      final scheduledStart = scheduledDateTime.millisecondsSinceEpoch;
+
       final room = await repo.createRoom(
         name: title,
         durationMinutes: duration,
         reminder: _selectedReminder,
         note: _noteController.text.trim(),
+        scheduledStart: scheduledStart,
       );
 
       if (mounted) {

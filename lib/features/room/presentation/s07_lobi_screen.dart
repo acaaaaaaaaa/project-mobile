@@ -75,7 +75,11 @@ class S07LobiScreen extends ConsumerWidget {
             ),
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref.read(roomRepositoryProvider).leaveRoom(roomId);
+              if (isHost) {
+                await ref.read(roomRepositoryProvider).endRoom(roomId);
+              } else {
+                await ref.read(roomRepositoryProvider).leaveRoom(roomId);
+              }
               if (context.mounted) context.go('/home');
             },
             child: Text(isHost ? 'Akhiri Ruang' : 'Keluar'),
