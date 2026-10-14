@@ -52,12 +52,16 @@ class SessionState {
   final bool isFinished;
   final RoomEvent? latestViolationEvent;
   final String? latestViolatorName;
+  final RoomEvent? latestLeaveEvent;
+  final String? latestLeaverName;
 
   const SessionState({
     this.remainingSeconds = 0,
     this.isFinished = false,
     this.latestViolationEvent,
     this.latestViolatorName,
+    this.latestLeaveEvent,
+    this.latestLeaverName,
   });
 
   SessionState copyWith({
@@ -65,12 +69,16 @@ class SessionState {
     bool? isFinished,
     RoomEvent? latestViolationEvent,
     String? latestViolatorName,
+    RoomEvent? latestLeaveEvent,
+    String? latestLeaverName,
   }) {
     return SessionState(
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
       isFinished: isFinished ?? this.isFinished,
       latestViolationEvent: latestViolationEvent,
       latestViolatorName: latestViolatorName,
+      latestLeaveEvent: latestLeaveEvent,
+      latestLeaverName: latestLeaverName,
     );
   }
 }
@@ -137,15 +145,29 @@ class SessionEngineNotifier extends StateNotifier<SessionState> {
         if (!_processedEventKeys.contains(event.key) && event.clientTs >= _joinTimeMs - 2000) {
           _processedEventKeys.add(event.key);
 
-          String violatorName = 'Kamu';
-          if (event.uid != currentUid) {
-            violatorName = await repo.fetchUserDisplayName(event.uid);
-          }
+          if (event.type == 'keluar') {
+            String leaverName = 'Anggota';
+            if (event.uid != currentUid) {
+              leaverName = await repo.fetchUserDisplayName(event.uid);
+            } else {
+              leaverName = 'Kamu';
+            }
 
-          state = state.copyWith(
-            latestViolationEvent: event,
-            latestViolatorName: violatorName,
-          );
+            state = state.copyWith(
+              latestLeaveEvent: event,
+              latestLeaverName: leaverName,
+            );
+          } else {
+            String violatorName = 'Kamu';
+            if (event.uid != currentUid) {
+              violatorName = await repo.fetchUserDisplayName(event.uid);
+            }
+
+            state = state.copyWith(
+              latestViolationEvent: event,
+              latestViolatorName: violatorName,
+            );
+          }
         }
       }
     });
@@ -175,6 +197,10 @@ class SessionEngineNotifier extends StateNotifier<SessionState> {
 
   void clearLatestViolation() {
     state = state.copyWith(latestViolationEvent: null, latestViolatorName: null);
+  }
+
+  void clearLatestLeave() {
+    state = state.copyWith(latestLeaveEvent: null, latestLeaverName: null);
   }
 
   @override

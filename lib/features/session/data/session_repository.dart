@@ -84,11 +84,38 @@ class SessionRepository {
     required String roomId,
     required String uid,
     required String state,
+    String? memberName,
   }) async {
     await _db.ref('roomMembers/$roomId/$uid').update({
       'state': state,
       'lastSeen': ServerValue.timestamp,
     });
+
+    if (state == 'keluar') {
+      try {
+        final name = memberName ?? 'Anggota';
+        await _db.ref('roomEvents/$roomId').push().set({
+          'uid': uid,
+          'type': 'keluar',
+          'title': '$name telah meninggalkan ruangan',
+          'clientTs': DateTime.now().millisecondsSinceEpoch,
+          'deltaTiltDeg': 0.0,
+          'zScore': 0.0,
+        });
+      } catch (_) {}
+    }
+  }
+
+  /// Sinkronisasi foto profil terkini ke roomMembers
+  Future<void> syncMemberPhoto({
+    required String roomId,
+    required String uid,
+    required String photoUrl,
+  }) async {
+    if (photoUrl.isEmpty) return;
+    try {
+      await _db.ref('roomMembers/$roomId/$uid/photoUrl').set(photoUrl);
+    } catch (_) {}
   }
 
   /// Heartbeat keberadaan (presence) setiap 5 detik

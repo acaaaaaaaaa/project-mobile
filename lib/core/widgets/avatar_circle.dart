@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
@@ -45,6 +46,48 @@ class AvatarCircle extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasPhoto = photoUrl != null && photoUrl!.trim().isNotEmpty;
 
+    Widget buildImage() {
+      final url = photoUrl!.trim();
+      if (url.startsWith('assets/')) {
+        return Image.asset(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildInitials(),
+        );
+      }
+      if (url.startsWith('data:image/') || url.startsWith('base64,')) {
+        try {
+          return Image.memory(
+            base64Decode(url.split(',').last),
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildInitials(),
+          );
+        } catch (_) {
+          return _buildInitials();
+        }
+      }
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildInitials(),
+        );
+      }
+      // Path lokal file dari image_picker
+      try {
+        final file = File(url);
+        if (file.existsSync()) {
+          return Image.file(
+            file,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildInitials(),
+          );
+        }
+      } catch (_) {}
+
+      return _buildInitials();
+    }
+
     Widget avatar = Container(
       width: size,
       height: size,
@@ -61,25 +104,7 @@ class AvatarCircle extends StatelessWidget {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: hasPhoto
-          ? (photoUrl!.startsWith('assets/')
-              ? Image.asset(
-                  photoUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => _buildInitials(),
-                )
-              : (photoUrl!.startsWith('data:image/') || photoUrl!.startsWith('base64,'))
-                  ? Image.memory(
-                      base64Decode(photoUrl!.split(',').last),
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => _buildInitials(),
-                    )
-                  : Image.network(
-                      photoUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => _buildInitials(),
-                    ))
-          : _buildInitials(),
+      child: hasPhoto ? buildImage() : _buildInitials(),
     );
 
     if (onTap != null) {

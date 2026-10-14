@@ -1,6 +1,7 @@
 class RoomEvent {
   final String key;
-  final String type; // 'violation'
+  final String type; // 'violation' | 'keluar'
+  final String title;
   final String uid; // Real FirebaseAuth UID
   final int tsServer;
   final int clientTs;
@@ -10,6 +11,7 @@ class RoomEvent {
   const RoomEvent({
     required this.key,
     required this.type,
+    this.title = '',
     required this.uid,
     required this.tsServer,
     required this.clientTs,
@@ -21,6 +23,7 @@ class RoomEvent {
     return RoomEvent(
       key: key,
       type: map['type'] as String? ?? 'violation',
+      title: map['title'] as String? ?? '',
       uid: map['uid'] as String? ?? '',
       tsServer: (map['tsServer'] as num?)?.toInt() ?? 0,
       clientTs: (map['clientTs'] as num?)?.toInt() ?? 0,
@@ -31,6 +34,7 @@ class RoomEvent {
 
   Map<String, dynamic> toMap() => {
         'type': type,
+        'title': title,
         'uid': uid,
         'tsServer': tsServer,
         'clientTs': clientTs,

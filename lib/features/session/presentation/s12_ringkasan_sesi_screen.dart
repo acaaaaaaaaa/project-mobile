@@ -85,20 +85,31 @@ class S12RingkasanSesiScreen extends ConsumerWidget {
       }
     }
 
-    // 3. Pelanggaran dengan nama asli
+    // 3. Pelanggaran & Anggota Keluar dengan nama asli
     for (final event in events) {
       final violator = members.where((m) => m.uid == event.uid).firstOrNull;
       final violatorName = violator?.name ?? (event.uid == currentUid ? 'Kamu' : 'Anggota');
-      final delta = event.deltaTiltDeg > 0 ? ' (deviasi ${event.deltaTiltDeg.toStringAsFixed(1)}°)' : '';
 
-      timelineEntries.add(
-        TimelineEntry(
-          timestamp: event.clientTs,
-          title: '$violatorName mengangkat HP$delta',
-          timeString: DateFormat('HH:mm').format(DateTime.fromMillisecondsSinceEpoch(event.clientTs)),
-          isViolation: true,
-        ),
-      );
+      if (event.type == 'keluar') {
+        timelineEntries.add(
+          TimelineEntry(
+            timestamp: event.clientTs,
+            title: '$violatorName meninggalkan ruangan',
+            timeString: DateFormat('HH:mm').format(DateTime.fromMillisecondsSinceEpoch(event.clientTs)),
+            isViolation: false,
+          ),
+        );
+      } else {
+        final delta = event.deltaTiltDeg > 0 ? ' (deviasi ${event.deltaTiltDeg.toStringAsFixed(1)}°)' : '';
+        timelineEntries.add(
+          TimelineEntry(
+            timestamp: event.clientTs,
+            title: '$violatorName mengangkat HP$delta',
+            timeString: DateFormat('HH:mm').format(DateTime.fromMillisecondsSinceEpoch(event.clientTs)),
+            isViolation: true,
+          ),
+        );
+      }
     }
 
     // 4. Sesi selesai

@@ -423,12 +423,35 @@ class RoomRepository {
     final uid = currentUid;
     if (uid == null) return;
 
+    // Ambil nama pengguna untuk log riwayat
+    String userName = 'Anggota';
+    try {
+      final userSnap = await _db.ref('users/$uid').get();
+      if (userSnap.exists && userSnap.value is Map) {
+        userName = (userSnap.value as Map)['displayName']?.toString() ?? 'Anggota';
+      }
+    } catch (_) {}
+
     // 1. Set state member menjadi 'keluar'
     await _db.ref('roomMembers/$roomId/$uid/state').set('keluar');
-    // 2. Hapus status active room pengguna saat ini
+
+    // 2. Catat event keluar ke roomEvents agar semua anggota menerima info dan tercatat di timeline/log
+    try {
+      final eventRef = _db.ref('roomEvents/$roomId').push();
+      await eventRef.set({
+        'uid': uid,
+        'type': 'keluar',
+        'title': '$userName telah meninggalkan ruangan',
+        'clientTs': DateTime.now().millisecondsSinceEpoch,
+        'deltaTiltDeg': 0.0,
+        'zScore': 0.0,
+      });
+    } catch (_) {}
+
+    // 3. Hapus status active room pengguna saat ini
     await _db.ref('userActiveRoom/$uid').remove();
 
-    // 3. Cek apakah user adalah host
+    // 4. Cek apakah user adalah host
     final roomSnap = await _db.ref('rooms/$roomId').get();
     if (roomSnap.exists && roomSnap.value is Map) {
       final roomData = roomSnap.value as Map;

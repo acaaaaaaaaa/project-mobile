@@ -96,6 +96,7 @@ class S24DetailRiwayatScreen extends ConsumerWidget {
     final currentUid = ref.watch(currentUserProvider).valueOrNull?.uid ?? '';
     final roomLive = ref.watch(roomProvider(roomId)).valueOrNull;
     final membersAsync = ref.watch(roomMembersProvider(roomId));
+    final eventsAsync = ref.watch(roomEventsProvider(roomId));
 
     final session = userSessionsAsync.valueOrNull?.where((s) => s.roomId == roomId).firstOrNull ??
         initialRecord ??
@@ -423,7 +424,81 @@ class S24DetailRiwayatScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
+
+            // Log Aktivitas Sesi (Kejadian Selama Sesi)
+            eventsAsync.when(
+              data: (events) {
+                if (events.isEmpty) return const SizedBox.shrink();
+                final members = membersAsync.valueOrNull ?? [];
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Log Aktivitas Sesi',
+                      style: AppTheme.headlineSmall.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.navy,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    AppCard(
+                      padding: const EdgeInsets.all(16),
+                      borderRadius: 18,
+                      child: Column(
+                        children: List.generate(events.length, (idx) {
+                          final event = events[idx];
+                          final isLast = idx == events.length - 1;
+                          final violator = members.where((m) => m.uid == event.uid).firstOrNull;
+                          final name = violator?.name ?? (event.uid == currentUid ? 'Kamu' : 'Anggota');
+                          final timeStr = DateFormat('HH:mm').format(DateTime.fromMillisecondsSinceEpoch(event.clientTs));
+                          final isLeave = event.type == 'keluar';
+                          final title = isLeave
+                              ? '$name meninggalkan ruangan'
+                              : '$name mengangkat HP${event.deltaTiltDeg > 0 ? " (deviasi ${event.deltaTiltDeg.toStringAsFixed(1)}°)" : ""}';
+
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: isLast ? 0.0 : 12.0),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isLeave ? AppColors.amber : AppColors.red,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  timeStr,
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    title,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: isLeave ? AppColors.textPrimary : AppColors.red,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                  ],
+                );
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (err, stack) => const SizedBox.shrink(),
+            ),
 
             // Tombol Hapus dari Riwayat
             OutlinedButton.icon(
