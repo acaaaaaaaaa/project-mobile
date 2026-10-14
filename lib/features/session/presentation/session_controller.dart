@@ -33,7 +33,11 @@ final serverTimeServiceProvider = Provider<ServerTimeService>((ref) {
 });
 
 final offlineEventQueueProvider = Provider<OfflineEventQueue>((ref) {
-  return OfflineEventQueue();
+  final db = FirebaseDatabase.instanceFor(
+    app: FirebaseDatabase.instance.app,
+    databaseURL: 'https://kerkom-project-default-rtdb.asia-southeast1.firebasedatabase.app/',
+  );
+  return OfflineEventQueue(db: db);
 });
 
 final alarmServiceProvider = Provider<AlarmService>((ref) {
@@ -90,6 +94,7 @@ class SessionEngineNotifier extends StateNotifier<SessionState> {
   Timer? _countdownTimer;
   Timer? _heartbeatTimer;
   StreamSubscription? _eventsSub;
+  bool _hasInitialEventsLoaded = false;
   final Set<String> _processedEventKeys = {};
   int _joinTimeMs = 0;
 
@@ -140,9 +145,18 @@ class SessionEngineNotifier extends StateNotifier<SessionState> {
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
 
     _eventsSub = repo.watchRoomEvents(roomId).listen((events) async {
+      // 1. Pada load pertama, masukkan seluruh riwayat yang sudah ada ke _processedEventKeys
+      if (!_hasInitialEventsLoaded) {
+        for (final event in events) {
+          _processedEventKeys.add(event.key);
+        }
+        _hasInitialEventsLoaded = true;
+        return;
+      }
+
+      // 2. Setiap event baru yang belum ada di _processedEventKeys adalah event baru real-time
       for (final event in events) {
-        // Hanya proses acara yang lebih baru dari waktu join & belum pernah diproses
-        if (!_processedEventKeys.contains(event.key) && event.clientTs >= _joinTimeMs - 2000) {
+        if (!_processedEventKeys.contains(event.key)) {
           _processedEventKeys.add(event.key);
 
           if (event.type == 'keluar') {

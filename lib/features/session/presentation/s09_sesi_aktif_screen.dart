@@ -17,6 +17,7 @@ import '../../monitoring/domain/monitor_controller.dart';
 import '../../monitoring/presentation/monitoring_providers.dart';
 import '../../monitoring/service/foreground_sensor_service.dart';
 import '../../monitoring/service/screen_state_service.dart';
+import '../../room/domain/room_models.dart';
 import '../../room/presentation/room_controller.dart';
 import '../domain/session_models.dart';
 import 'session_controller.dart';
@@ -36,6 +37,7 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
   bool _isNavigatingAway = false;
   bool _wasDeviceLifted = false;
   String? _localAlertBanner;
+  String? _remoteViolatorBanner;
 
   @override
   void initState() {
@@ -104,23 +106,25 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
     final currentUser = ref.read(currentUserProvider).value;
     final alarmMode = currentUser?.settings.alarmMode ?? 'both';
 
-    // Bunyikan alarm lokal sesuai pengaturan pengguna
+    // 1. Bunyikan alarm lokal sesuai pengaturan pengguna
     ref.read(alarmServiceProvider).triggerAlarm(alarmMode: alarmMode);
 
-    // Kirim event pelanggaran ke RTDB
+    // 2. Langsung kirim event pelanggaran ke RTDB agar diterima instan oleh anggota lain
+    if (currentUid != null) {
+      ref.read(sessionRepositoryProvider).recordRoomViolation(
+            roomId: widget.roomId,
+            uid: currentUid,
+            deltaTiltDeg: deltaTilt,
+            zScore: zScore,
+            memberName: currentUser?.displayName,
+          );
+    }
+
+    // 3. Juga catat ke Offline Event Queue untuk jaminan offline recovery
     ref.read(sessionEngineProvider(widget.roomId).notifier).recordViolation(
           deltaTiltDeg: deltaTilt,
           zScore: zScore,
         );
-
-    // Perbarui status anggota di RTDB
-    if (currentUid != null) {
-      ref.read(sessionRepositoryProvider).updateMemberState(
-            roomId: widget.roomId,
-            uid: currentUid,
-            state: 'terangkat',
-          );
-    }
 
     if (mounted) {
       setState(() {
@@ -134,10 +138,9 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
     ref.read(alarmServiceProvider).stop();
 
     if (currentUid != null) {
-      ref.read(sessionRepositoryProvider).updateMemberState(
+      ref.read(sessionRepositoryProvider).clearRoomViolation(
             roomId: widget.roomId,
             uid: currentUid,
-            state: 'aman',
           );
     }
 
@@ -375,56 +378,87 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
     final magnitude = snapshot?.magnitude ?? 9.81;
     final isDeviceLifted = snapshot?.state == MonitorState.violation;
 
-    // Deteksi transisi status pengangkatan HP secara lokal
-    if (isDeviceLifted && !_wasDeviceLifted) {
-      _wasDeviceLifted = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _handleLocalViolation(deltaTilt: currentTilt, zScore: zScore);
-      });
-    } else if (!isDeviceLifted && _wasDeviceLifted) {
-      _wasDeviceLifted = false;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _handlePhoneRestored();
-      });
-    }
+      // Deteksi transisi status pengangkatan HP secara lokal
+      if (isDeviceLifted && !_wasDeviceLifted) {
+        _wasDeviceLifted = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handleLocalViolation(deltaTilt: currentTilt, zScore: zScore);
+        });
+      } else if (!isDeviceLifted && _wasDeviceLifted) {
+        _wasDeviceLifted = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handlePhoneRestored();
+        });
+      }
 
-    // 3. Pantau event pelanggaran dari anggota lain & event keluar
-    ref.listen<SessionState>(sessionEngineProvider(widget.roomId), (prev, next) {
-      final event = next.latestViolationEvent;
-      if (event != null && !_isNavigatingAway) {
-        if (event.uid != currentUid) {
-          // Bunyikan alarm sesuai pengaturan pengguna saat anggota lain melanggar
+      // 3. Pantau status seluruh anggota di ruangan (Realtime Member State Watcher)
+      ref.listen<AsyncValue<List<RoomMemberModel>>>(roomMembersProvider(widget.roomId), (prev, next) {
+        final members = next.value ?? [];
+        final remoteViolators = members.where((m) => m.uid != currentUid && m.state == 'terangkat').toList();
+
+        if (remoteViolators.isNotEmpty && !_isNavigatingAway) {
+          // Ada anggota lain yang terdeteksi mengangkat HP!
           final alarmMode = currentUser?.settings.alarmMode ?? 'both';
           ref.read(alarmServiceProvider).triggerAlarm(alarmMode: alarmMode);
-        }
-      }
 
-      final leaveEvent = next.latestLeaveEvent;
-      if (leaveEvent != null && !_isNavigatingAway) {
-        final leaverName = next.latestLeaverName ?? 'Anggota';
-        ref.read(sessionEngineProvider(widget.roomId).notifier).clearLatestLeave();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.exit_to_app_rounded, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '$leaverName telah meninggalkan ruangan.',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: AppColors.amber,
-              duration: const Duration(seconds: 4),
-            ),
-          );
+          if (mounted) {
+            setState(() {
+              _remoteViolatorBanner = 'Peringatan: ${remoteViolators.first.name} mengangkat HP!';
+            });
+          }
+        } else if (remoteViolators.isEmpty && _remoteViolatorBanner != null && !_wasDeviceLifted) {
+          // Semua anggota lain sudah kembali meletakkan HP dan HP lokal juga aman
+          ref.read(alarmServiceProvider).stop();
+          if (mounted) {
+            setState(() {
+              _remoteViolatorBanner = null;
+            });
+          }
         }
-      }
-    });
+      });
+
+      // 4. Pantau event pelanggaran dari roomEvents & event keluar
+      ref.listen<SessionState>(sessionEngineProvider(widget.roomId), (prev, next) {
+        final event = next.latestViolationEvent;
+        if (event != null && !_isNavigatingAway) {
+          if (event.uid != currentUid) {
+            // Bunyikan alarm sesuai preferensi pengaturan pengguna saat anggota lain melanggar
+            final alarmMode = currentUser?.settings.alarmMode ?? 'both';
+            ref.read(alarmServiceProvider).triggerAlarm(alarmMode: alarmMode);
+            if (mounted) {
+              setState(() {
+                _remoteViolatorBanner = 'Peringatan: ${next.latestViolatorName ?? "Anggota"} mengangkat HP!';
+              });
+            }
+          }
+        }
+
+        final leaveEvent = next.latestLeaveEvent;
+        if (leaveEvent != null && !_isNavigatingAway) {
+          final leaverName = next.latestLeaverName ?? 'Anggota';
+          ref.read(sessionEngineProvider(widget.roomId).notifier).clearLatestLeave();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.exit_to_app_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '$leaverName telah meninggalkan ruangan.',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: AppColors.amber,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        }
+      });
 
     final totalDurationSec = (room?.durationMinutes ?? 25) * 60;
     final progress = totalDurationSec > 0
@@ -536,7 +570,7 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
                       ],
                     ),
                   ),
-                ] else if (sessionState.latestViolationEvent != null && sessionState.latestViolationEvent!.uid != currentUid) ...[
+                ] else if (_remoteViolatorBanner != null || (sessionState.latestViolationEvent != null && sessionState.latestViolationEvent!.uid != currentUid)) ...[
                   Container(
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -551,13 +585,17 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Peringatan: ${sessionState.latestViolatorName ?? "Anggota"} mengangkat HP!',
+                            _remoteViolatorBanner ?? 'Peringatan: ${sessionState.latestViolatorName ?? "Anggota"} mengangkat HP!',
                             style: const TextStyle(color: AppColors.red, fontWeight: FontWeight.w800, fontSize: 12),
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: AppColors.red, size: 18),
-                          onPressed: () => ref.read(sessionEngineProvider(widget.roomId).notifier).clearLatestViolation(),
+                        TextButton(
+                          onPressed: () {
+                            ref.read(alarmServiceProvider).stop();
+                            ref.read(sessionEngineProvider(widget.roomId).notifier).clearLatestViolation();
+                            setState(() => _remoteViolatorBanner = null);
+                          },
+                          child: const Text('Diamkan', style: TextStyle(color: AppColors.red, fontWeight: FontWeight.w900, fontSize: 11)),
                         ),
                       ],
                     ),

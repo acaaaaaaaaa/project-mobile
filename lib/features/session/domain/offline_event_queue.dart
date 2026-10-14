@@ -34,7 +34,12 @@ class OfflineEventQueue {
   static const int baseMs = 500;
   static const int capMs = 30000;
 
-  OfflineEventQueue({FirebaseDatabase? db}) : _db = db;
+  OfflineEventQueue({FirebaseDatabase? db})
+      : _db = db ??
+            FirebaseDatabase.instanceFor(
+              app: FirebaseDatabase.instance.app,
+              databaseURL: 'https://kerkom-project-default-rtdb.asia-southeast1.firebasedatabase.app/',
+            );
 
   List<QueuedViolationEvent> get pendingEvents => List.unmodifiable(_queue);
 

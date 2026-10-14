@@ -106,6 +106,56 @@ class SessionRepository {
     }
   }
 
+  /// Langsung mencatat event pelanggaran ke roomEvents dan set state member ke 'terangkat'
+  Future<void> recordRoomViolation({
+    required String roomId,
+    required String uid,
+    required double deltaTiltDeg,
+    required double zScore,
+    String? memberName,
+  }) async {
+    try {
+      final name = memberName ?? 'Anggota';
+      final pushRef = _db.ref('roomEvents/$roomId').push();
+      await pushRef.set({
+        'type': 'violation',
+        'uid': uid,
+        'title': '$name mengangkat HP',
+        'tsServer': ServerValue.timestamp,
+        'clientTs': DateTime.now().millisecondsSinceEpoch,
+        'deltaTiltDeg': deltaTiltDeg,
+        'zScore': zScore,
+      });
+
+      final memberRef = _db.ref('roomMembers/$roomId/$uid');
+      await memberRef.update({
+        'state': 'terangkat',
+        'lastSeen': ServerValue.timestamp,
+      });
+      await memberRef.child('liftCount').runTransaction((mutableData) {
+        final currentVal = (mutableData as num?)?.toInt() ?? 0;
+        return Transaction.success(currentVal + 1);
+      });
+    } catch (e) {
+      debugPrint('recordRoomViolation error: $e');
+    }
+  }
+
+  /// Reset status member ke 'aman'
+  Future<void> clearRoomViolation({
+    required String roomId,
+    required String uid,
+  }) async {
+    try {
+      await _db.ref('roomMembers/$roomId/$uid').update({
+        'state': 'aman',
+        'lastSeen': ServerValue.timestamp,
+      });
+    } catch (e) {
+      debugPrint('clearRoomViolation error: $e');
+    }
+  }
+
   /// Sinkronisasi foto profil terkini ke roomMembers
   Future<void> syncMemberPhoto({
     required String roomId,
