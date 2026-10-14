@@ -89,6 +89,17 @@ class S07LobiScreen extends ConsumerWidget {
     );
   }
 
+  String _formatLobbySchedule(int? startAt, int durationMinutes) {
+    if (startAt == null || startAt <= 0) return '$durationMinutes menit';
+    final dt = DateTime.fromMillisecondsSinceEpoch(startAt);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    final dateStr = '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+    final endDt = dt.add(Duration(minutes: durationMinutes));
+    final startStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    final endStr = '${endDt.hour.toString().padLeft(2, '0')}:${endDt.minute.toString().padLeft(2, '0')}';
+    return '$dateStr • $startStr - $endStr ($durationMinutes menit)';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final roomAsync = ref.watch(activeRoomProvider(roomId));
@@ -147,6 +158,9 @@ class S07LobiScreen extends ConsumerWidget {
 
             final isHost = room.hostUid == currentUid;
             final isSessionRunning = room.status == 'berjalan';
+            final meetingLink = room.meetingLink?.isNotEmpty == true
+                ? room.meetingLink!
+                : 'https://kerkom.app/j/${room.code}';
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
@@ -198,15 +212,33 @@ class S07LobiScreen extends ConsumerWidget {
                           style: AppTheme.labelSmall.copyWith(letterSpacing: 1.2, color: AppColors.textMuted),
                         ),
                         const SizedBox(height: 4),
-                        // Nama ruang ditampilkan persis seperti yang diketik
                         Text(
                           room.name,
                           style: AppTheme.headlineMedium.copyWith(
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 10),
 
+                        // Jadwal Pelaksanaan
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.primary),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _formatLobbySchedule(room.startAt, room.durationMinutes),
+                                style: AppTheme.bodySmall.copyWith(
+                                  color: AppColors.navy,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Kode Ruang
                         Text(
                           'KODE RUANG BELAJAR',
                           style: AppTheme.labelSmall.copyWith(letterSpacing: 1.2, color: AppColors.textMuted),
@@ -239,22 +271,83 @@ class S07LobiScreen extends ConsumerWidget {
                             ),
                             IconButton(
                               icon: const Icon(Icons.share_rounded, color: AppColors.primary, size: 20),
-                              tooltip: 'Bagikan Link',
+                              tooltip: 'Bagikan Undangan',
                               onPressed: () {
                                 SharePlus.instance.share(
                                   ShareParams(
-                                    text: 'Yuk gabung sesi fokus kelompok "${room.name}" di Kerkom!\nhttps://kerkom.app/j/${room.code}',
+                                    text: 'Yuk gabung sesi fokus kelompok "${room.name}" di KerKom!\nKode Ruang: ${room.code}\nLink: $meetingLink',
                                   ),
                                 );
                               },
                             ),
                           ],
                         ),
+
+                        // Link Meeting Card Row
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.link_rounded, size: 16, color: AppColors.primary),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  meetingLink,
+                                  style: AppTheme.bodySmall.copyWith(
+                                    color: AppColors.navy,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 11,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: meetingLink));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Link meeting disalin!'),
+                                      backgroundColor: AppColors.green,
+                                      duration: Duration(seconds: 1),
+                                    ),
+                                  );
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  child: Text('Salin', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 11)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Catatan jika ada
+                        if (room.note?.isNotEmpty == true) ...[
+                          const SizedBox(height: 10),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.notes_rounded, size: 14, color: AppColors.textMuted),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Catatan: ${room.note!}',
+                                  style: AppTheme.bodySmall.copyWith(color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   Text(
                     'ANGGOTA DI DALAM RUANG',
                     style: AppTheme.labelSmall.copyWith(letterSpacing: 1.2, color: AppColors.textMuted),
@@ -286,21 +379,43 @@ class S07LobiScreen extends ConsumerWidget {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          member.name + (isMe ? ' (Anda)' : ''),
-                                          style: AppTheme.bodyLarge.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                member.name + (isMe ? ' (Anda)' : ''),
+                                                style: AppTheme.bodyLarge.copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                         Text(
-                                          member.isHost ? 'Pembuat Ruang' : 'Peserta',
+                                          member.isHost ? 'Ketua Ruang' : 'Peserta',
                                           style: AppTheme.bodySmall.copyWith(color: AppColors.textMuted),
                                         ),
                                       ],
                                     ),
                                   ),
                                   if (member.isHost)
-                                    const StatusChip(label: 'HOST', color: StatusChipColor.lime)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFEF3C7),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+                                      ),
+                                      child: const Text(
+                                        '👑 Ketua Ruang',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFFB45309),
+                                        ),
+                                      ),
+                                    )
                                   else
                                     const StatusChip(label: 'Siap', color: StatusChipColor.green),
                                 ],

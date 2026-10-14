@@ -80,7 +80,7 @@ void main() {
     );
 
     expect(find.text('Detail Riwayat'), findsOneWidget);
-    expect(find.text('Anggota (4)'), findsOneWidget);
+    expect(find.text('Anggota'), findsOneWidget);
     expect(find.text('Kode Ruang'), findsOneWidget);
     expect(find.text('Link Meeting'), findsOneWidget);
     expect(find.text('Hapus dari Riwayat'), findsOneWidget);

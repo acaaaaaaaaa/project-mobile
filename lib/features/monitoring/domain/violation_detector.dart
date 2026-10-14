@@ -29,8 +29,15 @@ class ViolationDetector {
     final kHigh = config.kZScoreHigh;
     final kLow = config.kZScoreLow;
 
-    final isHigh = features.meanDeltaTilt > tHigh || features.zScore > kHigh;
-    final isLow = features.meanDeltaTilt < tLow && features.zScore < kLow;
+    // Deteksi pengangkatan HP: sudut kemiringan berubah, percepatan dinamis naik bersama tilt, atau z-score naik
+    final isHigh = features.meanDeltaTilt > tHigh ||
+        features.zScore > kHigh ||
+        (features.peakToPeak > 2.0 && features.meanDeltaTilt > 5.0) ||
+        (features.meanDeltaTilt > (tHigh * 0.75) && features.gyroRms > 0.8);
+
+    final isLow = features.meanDeltaTilt < tLow &&
+        features.zScore < kLow &&
+        features.gyroRms < 0.4;
 
     if (!_isViolating) {
       if (isHigh) {

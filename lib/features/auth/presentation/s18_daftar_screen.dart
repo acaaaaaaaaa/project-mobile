@@ -134,26 +134,22 @@ class _S18DaftarScreenState extends ConsumerState<S18DaftarScreen> {
 
     try {
       final authRepo = ref.read(authRepositoryProvider);
-      final result = await authRepo.signInWithGoogle();
+      await authRepo.signInWithGoogle();
 
       if (!mounted) return;
-      if (result.isNewUser) {
-        context.go('/complete-profile');
-      } else {
-        final pendingCode = ref.read(pendingInviteCodeProvider);
-        if (pendingCode != null && pendingCode.isNotEmpty) {
-          try {
-            final room = await ref.read(roomRepositoryProvider).joinRoomByCode(pendingCode);
-            ref.read(pendingInviteCodeProvider.notifier).state = null;
-            if (mounted) {
-              context.go('/lobby/${room.id}');
-              return;
-            }
-          } catch (_) {}
-        }
-        if (!mounted) return;
-        context.go('/home');
+      final pendingCode = ref.read(pendingInviteCodeProvider);
+      if (pendingCode != null && pendingCode.isNotEmpty) {
+        try {
+          final room = await ref.read(roomRepositoryProvider).joinRoomByCode(pendingCode);
+          ref.read(pendingInviteCodeProvider.notifier).state = null;
+          if (mounted) {
+            context.go('/lobby/${room.id}');
+            return;
+          }
+        } catch (_) {}
       }
+      if (!mounted) return;
+      context.go('/home');
     } catch (e) {
       if (mounted) setState(() => _errorMessage = e.toString());
     } finally {

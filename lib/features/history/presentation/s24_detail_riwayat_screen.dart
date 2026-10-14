@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/avatar_circle.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../room/presentation/room_controller.dart';
 import '../../session/domain/session_models.dart';
 import '../../session/presentation/session_controller.dart';
 
@@ -91,32 +94,40 @@ class S24DetailRiwayatScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userSessionsAsync = ref.watch(userSessionsProvider);
     final currentUid = ref.watch(currentUserProvider).valueOrNull?.uid ?? '';
+    final roomLive = ref.watch(roomProvider(roomId)).valueOrNull;
+    final membersAsync = ref.watch(roomMembersProvider(roomId));
 
     final session = userSessionsAsync.valueOrNull?.where((s) => s.roomId == roomId).firstOrNull ??
         initialRecord ??
         UserSessionRecord(
           roomId: roomId,
-          roomName: 'Tugas Akhir HCI Kelompok 4',
-          startAt: DateTime(2026, 10, 10, 14, 0).millisecondsSinceEpoch,
-          completedAt: DateTime(2026, 10, 10, 14, 45).millisecondsSinceEpoch,
-          durationDoneMin: 45,
+          roomName: roomLive?.name ?? 'Sesi Belajar',
+          startAt: roomLive?.startAt ?? DateTime.now().millisecondsSinceEpoch,
+          completedAt: DateTime.now().millisecondsSinceEpoch,
+          durationDoneMin: roomLive?.durationMinutes ?? 45,
           violationCount: 0,
           endedHow: 'host',
-          roomCode: 'K7M2Q9',
-          isCreatedByMe: true,
+          roomCode: roomLive?.code ?? '-',
+          isCreatedByMe: roomLive?.hostUid == currentUid,
           status: 'Selesai',
-          memberCount: 4,
-          note: 'Diskusi progress tugas dan pembagian role.',
-          meetingLink: 'https://zoom.us/j/123456789',
+          memberCount: 1,
+          note: roomLive?.note,
+          meetingLink: roomLive?.code != null ? 'https://kerkom.app/j/${roomLive!.code}' : null,
         );
 
-    final roomCode = session.roomCode?.isNotEmpty == true ? session.roomCode! : 'K7M2Q9';
-    final meetingLink = session.meetingLink?.isNotEmpty == true
+    final roomCode = (session.roomCode?.isNotEmpty == true)
+        ? session.roomCode!
+        : (roomLive?.code ?? '-');
+    final meetingLink = (session.meetingLink?.isNotEmpty == true)
         ? session.meetingLink!
-        : 'https://kerkom.app/j/$roomCode';
-    final note = session.note?.isNotEmpty == true
+        : (roomCode != '-' ? 'https://kerkom.app/j/$roomCode' : 'https://kerkom.app');
+    final note = (session.note?.isNotEmpty == true)
         ? session.note!
-        : 'Diskusi progress tugas dan pembagian role.';
+        : (roomLive?.note?.isNotEmpty == true
+            ? roomLive!.note!
+            : 'Tidak ada catatan tambahan untuk ruangan ini.');
+
+    final formattedDateTime = _formatFullDateTime(session.startAt, session.completedAt, session.durationDoneMin);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -201,7 +212,7 @@ class S24DetailRiwayatScreen extends ConsumerWidget {
                   const SizedBox(height: 14),
 
                   Text(
-                    '10 Okt 2026  14:00 - 14:45 • ${session.durationDoneMin} menit',
+                    formattedDateTime,
                     style: AppTheme.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w600,
@@ -219,40 +230,84 @@ class S24DetailRiwayatScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Anggota (${session.memberCount})',
-                    style: AppTheme.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.navy,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildMemberAvatar('F', AppColors.primary),
-                      const SizedBox(width: 8),
-                      _buildMemberAvatar('R', AppColors.navy),
-                      const SizedBox(width: 8),
-                      _buildMemberAvatar('A', const Color(0xFF059669)),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '+1',
-                            style: AppTheme.labelSmall.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
+                      Text(
+                        'Anggota',
+                        style: AppTheme.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.navy,
                         ),
                       ),
+                      membersAsync.when(
+                        data: (m) => Text(
+                          '${m.length} orang',
+                          style: AppTheme.bodySmall.copyWith(color: AppColors.textMuted),
+                        ),
+                        loading: () => const SizedBox.shrink(),
+                        error: (err, stack) => const SizedBox.shrink(),
+                      ),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  membersAsync.when(
+                    data: (members) {
+                      if (members.isEmpty) {
+                        return Text(
+                          'Data anggota tidak tersedia',
+                          style: AppTheme.bodySmall.copyWith(color: AppColors.textMuted),
+                        );
+                      }
+                      return Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: members.map((member) {
+                          final isMe = member.uid == currentUid;
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AvatarCircle(name: member.name, photoUrl: member.photoUrl, size: 28),
+                                const SizedBox(width: 8),
+                                Text(
+                                  member.name + (isMe ? ' (Kamu)' : ''),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.navy),
+                                ),
+                                if (member.isHost) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEF3C7),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text(
+                                      '👑 Ketua',
+                                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                    loading: () => const SizedBox(
+                      height: 38,
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    ),
+                    error: (err, stack) => Text(
+                      '${session.memberCount} Anggota',
+                      style: AppTheme.bodyMedium.copyWith(color: AppColors.navy, fontWeight: FontWeight.w700),
+                    ),
                   ),
                 ],
               ),
@@ -388,20 +443,21 @@ class S24DetailRiwayatScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMemberAvatar(String initial, Color color) {
-    return Container(
-      width: 38,
-      height: 38,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Text(
-          initial,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-      ),
-    );
+  String _formatFullDateTime(int? startAt, int? completedAt, int durationMinutes) {
+    if (startAt == null || startAt == 0) return 'Jadwal fleksibel';
+    final startDt = DateTime.fromMillisecondsSinceEpoch(startAt);
+    final endDt = (completedAt != null && completedAt > 0)
+        ? DateTime.fromMillisecondsSinceEpoch(completedAt)
+        : startDt.add(Duration(minutes: durationMinutes));
+    try {
+      final dateStr = DateFormat('d MMMM yyyy').format(startDt);
+      final startStr = DateFormat('HH:mm').format(startDt);
+      final endStr = DateFormat('HH:mm').format(endDt);
+      return '$dateStr • $startStr - $endStr WIB';
+    } catch (_) {
+      final startStr = DateFormat('HH:mm').format(startDt);
+      final endStr = DateFormat('HH:mm').format(endDt);
+      return '$startStr - $endStr WIB';
+    }
   }
 }

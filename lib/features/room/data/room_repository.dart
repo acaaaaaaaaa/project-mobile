@@ -37,6 +37,7 @@ class RoomRepository {
     String? reminder,
     String? note,
     int? scheduledStart,
+    String? meetingLink,
   }) async {
     final user = _auth.currentUser;
     if (user == null) throw 'Pengguna belum terautentikasi';
@@ -102,6 +103,10 @@ class RoomRepository {
     final now = DateTime.now().millisecondsSinceEpoch;
     final startTimestamp = scheduledStart ?? now;
 
+    final defaultLink = meetingLink?.isNotEmpty == true
+        ? meetingLink!
+        : 'https://kerkom.app/j/$assignedCode';
+
     final room = RoomModel(
       id: roomId,
       code: assignedCode,
@@ -114,6 +119,7 @@ class RoomRepository {
       remainingSeconds: durationMinutes * 60,
       reminder: reminder,
       note: note,
+      meetingLink: defaultLink,
     );
 
     final hostMember = RoomMemberModel(
@@ -145,6 +151,7 @@ class RoomRepository {
         'status': 'lobi',
         'note': note ?? '',
         'reminder': reminder ?? '',
+        'meetingLink': defaultLink,
         'createdAt': now,
       },
     };
@@ -431,34 +438,7 @@ class RoomRepository {
         // Jika bukan host, hapus dari userRooms pengguna (karena keluar/batal partisipasi)
         await _db.ref('userRooms/$uid/$roomId').remove();
       }
-
-      // Jika ada anggota lain yang aktif, kita bisa delegasikan host ke anggota berikutnya
-      final membersSnap = await _db.ref('roomMembers/$roomId').get();
-      if (membersSnap.exists && membersSnap.value is Map) {
-        final membersMap = membersSnap.value as Map;
-        RoomMemberModel? nextHost;
-
-        membersMap.forEach((k, v) {
-          if (v is Map && k != uid) {
-            final m = RoomMemberModel.fromMap(k.toString(), v);
-            if (m.state != 'keluar') {
-              if (nextHost == null || m.joinedAt < nextHost!.joinedAt) {
-                nextHost = m;
-              }
-            }
-          }
-        });
-
-        if (hostUid == uid && nextHost != null) {
-          // Transfer host ke anggota terawal berikutnya
-          await _db.ref('rooms/$roomId/hostUid').set(nextHost!.uid);
-          await _db.ref('roomMembers/$roomId/${nextHost!.uid}/isHost').set(true);
-          await _db.ref('roomMembers/$roomId/$uid/isHost').set(false);
-          await _db.ref('userRooms/${nextHost!.uid}/$roomId/role').set('host');
-        }
-        // PERHATIAN: JANGAN pernah mengubah status room menjadi 'selesai' di sini!
-        // Sesi hanya berakhir ketika tombol 'Akhiri Ruang' ditekan atau sesuai jam yang di-set.
-      }
+      // Kepemilikan host tetap dipegang oleh pembuat ruang. Sesi tidak berpindah kepemilikan.
     }
   }
 
@@ -634,45 +614,41 @@ class RoomRepository {
     await _db.ref().update(updates);
   }
 
-  /// Hapus Ruang (Hanya Host, tidak boleh saat sesi 'berjalan')
+  /// Hapus Ruang (Hanya Host, optimistik instan)
   Future<void> deleteRoom(String roomId) async {
     final uid = currentUid;
     if (uid == null) throw 'Pengguna belum terautentikasi';
 
-    final roomSnap = await _db.ref('rooms/$roomId').get();
-    if (!roomSnap.exists || roomSnap.value is! Map) return;
+    // 1. Optimistic remove seketika agar UI tidak lag
+    _db.ref('userRooms/$uid/$roomId').remove();
+    _db.ref('userActiveRoom/$uid').remove();
 
-    final roomData = roomSnap.value as Map;
-    final hostUid = roomData['hostUid']?.toString() ?? roomData['leaderId']?.toString();
-    if (hostUid != uid) throw 'Hanya Host yang dapat menghapus ruangan';
-
-    final status = roomData['status']?.toString() ??
-        (roomData['isSessionActive'] == true ? 'berjalan' : 'lobi');
-    if (status == 'berjalan') {
-      throw 'Ruangan sedang dalam sesi berjalan. Akhiri sesi terlebih dahulu sebelum menghapus.';
-    }
-
-    final code = roomData['code']?.toString();
-    final updates = <String, dynamic>{
-      'rooms/$roomId': null,
-      'roomMembers/$roomId': null,
-      'roomEvents/$roomId': null,
-      if (code != null) 'roomCodes/$code': null,
-      'userRooms/$uid/$roomId': null,
-      'userActiveRoom/$uid': null,
-    };
-
+    // 2. Background cleanup
     try {
-      final membersSnap = await _db.ref('roomMembers/$roomId').get();
-      if (membersSnap.exists && membersSnap.value is Map) {
-        final membersMap = membersSnap.value as Map;
-        membersMap.forEach((mUid, _) {
-          updates['userRooms/$mUid/$roomId'] = null;
-          updates['userActiveRoom/$mUid'] = null;
-        });
+      final roomSnap = await _db.ref('rooms/$roomId').get().timeout(const Duration(seconds: 2));
+      if (roomSnap.exists && roomSnap.value is Map) {
+        final roomData = roomSnap.value as Map;
+        final code = roomData['code']?.toString();
+        final updates = <String, dynamic>{
+          'rooms/$roomId': null,
+          'roomMembers/$roomId': null,
+          'roomEvents/$roomId': null,
+          if (code != null) 'roomCodes/$code': null,
+        };
+
+        try {
+          final membersSnap = await _db.ref('roomMembers/$roomId').get().timeout(const Duration(seconds: 1));
+          if (membersSnap.exists && membersSnap.value is Map) {
+            final membersMap = membersSnap.value as Map;
+            membersMap.forEach((mUid, _) {
+              updates['userRooms/$mUid/$roomId'] = null;
+              updates['userActiveRoom/$mUid'] = null;
+            });
+          }
+        } catch (_) {}
+
+        await _db.ref().update(updates);
       }
     } catch (_) {}
-
-    await _db.ref().update(updates);
   }
 }

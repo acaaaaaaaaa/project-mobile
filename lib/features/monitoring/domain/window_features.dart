@@ -85,11 +85,11 @@ class WindowFeaturesExtractor {
     final meanDeltaTilt = sumTilt / n;
 
     // Hitung z-score magnitudo terhadap baseline
-    double zScore = 0.0;
-    if (calibration != null) {
-      final std = max(calibration.stdMagnitude, config.epsilonStd);
-      zScore = (meanMag - calibration.meanMagnitude).abs() / std;
-    }
+    final baselineMag = calibration?.meanMagnitude ?? 9.80665;
+    final std = calibration != null
+        ? max(calibration.stdMagnitude, config.epsilonStd)
+        : 0.15;
+    final zScore = (meanMag - baselineMag).abs() / std;
 
     return WindowFeaturesOutput(
       zScore: zScore,

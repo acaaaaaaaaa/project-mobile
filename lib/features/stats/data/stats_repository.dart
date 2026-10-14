@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
 import '../domain/stats_model.dart';
 
@@ -11,25 +12,29 @@ class StatsRepository {
               databaseURL: 'https://kerkom-project-default-rtdb.asia-southeast1.firebasedatabase.app/',
             );
 
-  Stream<UserStats> watchUserStats(String uid) {
-    // Listen to userRooms and userSessions updates
-    return _db.ref('userRooms/$uid').onValue.asyncMap((roomEvent) async {
+  Stream<UserStats> watchUserStats(String uid) async* {
+    late final StreamController<UserStats> streamController;
+
+    Future<void> recalculate() async {
       int roomsCreated = 0;
       int roomsJoined = 0;
 
-      if (roomEvent.snapshot.exists && roomEvent.snapshot.value is Map) {
-        final rMap = roomEvent.snapshot.value as Map;
-        rMap.forEach((_, v) {
-          if (v is Map) {
-            final role = v['role']?.toString();
-            if (role == 'host') {
-              roomsCreated++;
-            } else {
-              roomsJoined++;
+      try {
+        final roomSnap = await _db.ref('userRooms/$uid').get();
+        if (roomSnap.exists && roomSnap.value is Map) {
+          final rMap = roomSnap.value as Map;
+          rMap.forEach((_, v) {
+            if (v is Map) {
+              final role = v['role']?.toString();
+              if (role == 'host') {
+                roomsCreated++;
+              } else {
+                roomsJoined++;
+              }
             }
-          }
-        });
-      }
+          });
+        }
+      } catch (_) {}
 
       int sessionsCompleted = 0;
       int totalMinutes = 0;
@@ -76,8 +81,12 @@ class StatsRepository {
         }
       } catch (_) {}
 
+      // Total sesi = seluruh sesi yang pernah dibuat dan diikuti
+      final totalSessions = (roomsCreated + roomsJoined) > sessionsCompleted
+          ? (roomsCreated + roomsJoined)
+          : (sessionsCompleted > 0 ? sessionsCompleted : (roomsCreated + roomsJoined));
+
       // Hitung persentase capaian performa real
-      // Rasio keberhasilan: jika ada sesi, 100 - (gangguan * 5) dengan batas min 0
       double perfPercent = 0.0;
       if (sessionsCompleted > 0) {
         final penalty = totalViolations * 5.0;
@@ -86,16 +95,37 @@ class StatsRepository {
         perfPercent = 100.0; // Baru membuat ruang, target awal optimal
       }
 
-      return UserStats(
-        roomsCreated: roomsCreated,
-        roomsJoined: roomsJoined,
-        sessionsCompleted: sessionsCompleted,
-        totalFocusHours: totalMinutes / 60.0,
-        totalViolations: totalViolations,
-        performancePercent: perfPercent,
-        weeklyActivity: weeklyActivity,
-        dailyMinutes: dailyMinutes,
-      );
-    });
+      if (!streamController.isClosed) {
+        streamController.add(
+          UserStats(
+            roomsCreated: roomsCreated,
+            roomsJoined: roomsJoined,
+            sessionsCompleted: totalSessions,
+            totalFocusHours: totalMinutes / 60.0,
+            totalViolations: totalViolations,
+            performancePercent: perfPercent,
+            weeklyActivity: weeklyActivity,
+            dailyMinutes: dailyMinutes,
+          ),
+        );
+      }
+    }
+
+    streamController = StreamController<UserStats>(
+      onListen: () {
+        recalculate();
+      },
+    );
+
+    final subRooms = _db.ref('userRooms/$uid').onValue.listen((_) => recalculate());
+    final subSessions = _db.ref('userSessions/$uid').onValue.listen((_) => recalculate());
+
+    streamController.onCancel = () {
+      subRooms.cancel();
+      subSessions.cancel();
+      streamController.close();
+    };
+
+    yield* streamController.stream;
   }
 }

@@ -128,8 +128,7 @@ class _S13RiwayatScreenState extends ConsumerState<S13RiwayatScreen> {
             Expanded(
               child: sessionsAsync.when(
                 data: (sessions) {
-                  final list = sessions.isNotEmpty ? sessions : _getDefaultSessions();
-                  final filtered = _filterSessions(list);
+                  final filtered = _filterSessions(sessions);
 
                   if (filtered.isEmpty) {
                     return Center(
@@ -143,7 +142,12 @@ class _S13RiwayatScreenState extends ConsumerState<S13RiwayatScreen> {
                   return _buildGroupedSessionList(filtered);
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => _buildGroupedSessionList(_filterSessions(_getDefaultSessions())),
+                error: (error, stack) => Center(
+                  child: Text(
+                    'Belum ada riwayat sesi',
+                    style: AppTheme.bodyMedium.copyWith(color: AppColors.textMuted),
+                  ),
+                ),
               ),
             ),
           ],
@@ -200,79 +204,29 @@ class _S13RiwayatScreenState extends ConsumerState<S13RiwayatScreen> {
     return all;
   }
 
-  List<UserSessionRecord> _getDefaultSessions() {
-    return [
-      UserSessionRecord(
-        roomId: 'sess-1',
-        roomName: 'Tugas Akhir HCI Kelompok 4',
-        startAt: DateTime(2026, 10, 10, 14, 0).millisecondsSinceEpoch,
-        completedAt: DateTime(2026, 10, 10, 14, 45).millisecondsSinceEpoch,
-        durationDoneMin: 45,
-        violationCount: 0,
-        endedHow: 'host',
-        roomCode: 'K7M2Q9',
-        isCreatedByMe: true,
-        status: 'Selesai',
-        memberCount: 4,
-        note: 'Diskusi progress tugas dan pembagian role.',
-      ),
-      UserSessionRecord(
-        roomId: 'sess-2',
-        roomName: 'Diskusi Capstone',
-        startAt: DateTime(2026, 10, 10, 9, 0).millisecondsSinceEpoch,
-        completedAt: DateTime(2026, 10, 10, 10, 30).millisecondsSinceEpoch,
-        durationDoneMin: 90,
-        violationCount: 1,
-        endedHow: 'timer',
-        roomCode: 'P9L4T1',
-        isCreatedByMe: false,
-        status: 'Selesai',
-        memberCount: 3,
-        note: 'Perencanaan sprint 1 capstone project.',
-      ),
-      UserSessionRecord(
-        roomId: 'sess-3',
-        roomName: 'Koding Algoritma Struktur Data',
-        startAt: DateTime(2026, 10, 9, 19, 30).millisecondsSinceEpoch,
-        completedAt: DateTime(2026, 10, 9, 20, 30).millisecondsSinceEpoch,
-        durationDoneMin: 60,
-        violationCount: 0,
-        endedHow: 'timer',
-        roomCode: 'A3K9M2',
-        isCreatedByMe: false,
-        status: 'Selesai',
-        memberCount: 3,
-        note: 'Latihan tree and graph traversal.',
-      ),
-      UserSessionRecord(
-        roomId: 'sess-4',
-        roomName: 'Review Materi Big Data',
-        startAt: DateTime(2026, 10, 8, 10, 0).millisecondsSinceEpoch,
-        completedAt: DateTime(2026, 10, 8, 11, 0).millisecondsSinceEpoch,
-        durationDoneMin: 60,
-        violationCount: 0,
-        endedHow: 'host',
-        roomCode: 'X8V1C3',
-        isCreatedByMe: true,
-        status: 'Selesai',
-        memberCount: 2,
-        note: 'Persiapan kuis big data processing.',
-      ),
-      UserSessionRecord(
-        roomId: 'sess-5',
-        roomName: 'Persiapan Presentasi',
-        startAt: DateTime(2026, 10, 7, 15, 0).millisecondsSinceEpoch,
-        completedAt: DateTime(2026, 10, 7, 16, 30).millisecondsSinceEpoch,
-        durationDoneMin: 90,
-        violationCount: 2,
-        endedHow: 'host',
-        roomCode: 'M2N6H4',
-        isCreatedByMe: true,
-        status: 'Dibatalkan',
-        memberCount: 5,
-        note: 'Dibatalkan karena jadwal dosen bentrok.',
-      ),
-    ];
+  String _formatSessionTime(int startAt, int completedAt, int durationMin) {
+    if (startAt <= 0) return '$durationMin menit';
+    final startDt = DateTime.fromMillisecondsSinceEpoch(startAt);
+    final endDt = completedAt > startAt
+        ? DateTime.fromMillisecondsSinceEpoch(completedAt)
+        : startDt.add(Duration(minutes: durationMin > 0 ? durationMin : 45));
+    final startStr = '${startDt.hour.toString().padLeft(2, '0')}:${startDt.minute.toString().padLeft(2, '0')}';
+    final endStr = '${endDt.hour.toString().padLeft(2, '0')}:${endDt.minute.toString().padLeft(2, '0')}';
+    return '$startStr - $endStr • $durationMin menit';
+  }
+
+  String _getDateHeader(int startAt) {
+    if (startAt <= 0) return 'Riwayat Sesi';
+    final dt = DateTime.fromMillisecondsSinceEpoch(startAt);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final sessionDay = DateTime(dt.year, dt.month, dt.day);
+    final diffDays = today.difference(sessionDay).inDays;
+
+    if (diffDays == 0) return 'Hari ini';
+    if (diffDays == 1) return 'Kemarin';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
   Widget _buildGroupedSessionList(List<UserSessionRecord> sessions) {
@@ -281,19 +235,18 @@ class _S13RiwayatScreenState extends ConsumerState<S13RiwayatScreen> {
       itemCount: sessions.length,
       itemBuilder: (context, index) {
         final session = sessions[index];
-        final isFirst = index == 0;
-        final dateLabel = index == 0
-            ? 'Hari ini'
-            : (index == 1 ? 'Kemarin' : '8 Okt 2026');
+        final currentHeader = _getDateHeader(session.startAt);
+        final prevHeader = index > 0 ? _getDateHeader(sessions[index - 1].startAt) : null;
+        final showHeader = index == 0 || currentHeader != prevHeader;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (isFirst || index == 2) ...[
+            if (showHeader) ...[
               Padding(
-                padding: const EdgeInsets.only(top: 6, bottom: 8),
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
                 child: Text(
-                  dateLabel,
+                  currentHeader,
                   style: AppTheme.bodyMedium.copyWith(
                     fontWeight: FontWeight.w800,
                     color: AppColors.navy,
@@ -342,11 +295,18 @@ class _S13RiwayatScreenState extends ConsumerState<S13RiwayatScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '14:00 - 14:45',
+                            _formatSessionTime(session.startAt, session.completedAt, session.durationDoneMin),
                             style: AppTheme.bodySmall.copyWith(color: AppColors.textSecondary),
                           ),
-                          const SizedBox(height: 6),
-                          _buildMiniAvatarStack(),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${session.memberCount} Anggota • ${session.isCreatedByMe ? 'Dibuat Saya' : 'Diikuti'}',
+                            style: AppTheme.bodySmall.copyWith(
+                              fontSize: 11,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -397,40 +357,5 @@ class _S13RiwayatScreenState extends ConsumerState<S13RiwayatScreen> {
   IconData _getSessionIcon(int index) {
     const icons = [Icons.videocam_rounded, Icons.folder_rounded, Icons.bar_chart_rounded, Icons.bookmark_rounded, Icons.edit_note_rounded];
     return icons[index % icons.length];
-  }
-
-  Widget _buildMiniAvatarStack() {
-    return SizedBox(
-      width: 44,
-      height: 20,
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            child: CircleAvatar(
-              radius: 9,
-              backgroundColor: AppColors.primary,
-              child: const Text('F', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          Positioned(
-            left: 12,
-            child: CircleAvatar(
-              radius: 9,
-              backgroundColor: AppColors.navy,
-              child: const Text('R', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          Positioned(
-            left: 24,
-            child: CircleAvatar(
-              radius: 9,
-              backgroundColor: const Color(0xFF059669),
-              child: const Text('A', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

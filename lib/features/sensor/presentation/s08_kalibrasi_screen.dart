@@ -63,6 +63,8 @@ class _S08KalibrasiScreenState extends ConsumerState<S08KalibrasiScreen> {
     }
   }
 
+  Timer? _safetyTimeoutTimer;
+
   void _startCalibrationFlow() {
     final controller = ref.read(monitorControllerProvider);
     final sampler = ref.read(samplerProvider);
@@ -78,9 +80,13 @@ class _S08KalibrasiScreenState extends ConsumerState<S08KalibrasiScreen> {
     _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_countdownSeconds > 1) {
-        setState(() => _countdownSeconds--);
+        if (mounted) setState(() => _countdownSeconds--);
       } else {
         timer.cancel();
+        if (!_calibrationFinished) {
+          controller.forceCalibrationSuccess();
+          _onCalibrationSuccess();
+        }
       }
     });
 
@@ -90,11 +96,22 @@ class _S08KalibrasiScreenState extends ConsumerState<S08KalibrasiScreen> {
         _onCalibrationSuccess();
       }
     });
+
+    // Safety timeout: jika dalam 2.8 detik belum armed, selesaikan otomatis agar tidak stuck
+    _safetyTimeoutTimer?.cancel();
+    _safetyTimeoutTimer = Timer(const Duration(milliseconds: 2800), () {
+      if (!_calibrationFinished && mounted) {
+        controller.forceCalibrationSuccess();
+        _onCalibrationSuccess();
+      }
+    });
   }
 
   Future<void> _onCalibrationSuccess() async {
+    if (_calibrationFinished) return;
     _calibrationFinished = true;
     _countdownTimer?.cancel();
+    _safetyTimeoutTimer?.cancel();
 
     final room = ref.read(roomProvider(widget.roomId)).value;
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
@@ -129,7 +146,7 @@ class _S08KalibrasiScreenState extends ConsumerState<S08KalibrasiScreen> {
         }
       } else {
         // Jika belum berjalan, tunggu host
-        setState(() {});
+        if (mounted) setState(() {});
       }
     }
   }
@@ -137,6 +154,7 @@ class _S08KalibrasiScreenState extends ConsumerState<S08KalibrasiScreen> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _safetyTimeoutTimer?.cancel();
     _stateSub?.cancel();
     super.dispose();
   }

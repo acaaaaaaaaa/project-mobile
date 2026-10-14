@@ -190,6 +190,27 @@ class AuthRepository {
     }
   }
 
+  /// Meminta izin resmi akses Google Calendar via OAuth Consent
+  Future<bool> requestGoogleCalendarConsent() async {
+    try {
+      final googleSignIn = GoogleSignIn(
+        scopes: [
+          'email',
+          'https://www.googleapis.com/auth/calendar.events',
+        ],
+      );
+      final account = await googleSignIn.signIn();
+      if (account == null) {
+        return false;
+      }
+      await updateCalendarSettings(googleCalendarConnected: true);
+      return true;
+    } catch (e) {
+      debugPrint('Error requestGoogleCalendarConsent: $e');
+      rethrow;
+    }
+  }
+
   /// Perbarui preferensi sinkronisasi kalender (S21)
   Future<void> updateCalendarSettings({
     bool? googleCalendarConnected,

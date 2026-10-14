@@ -29,9 +29,54 @@ class SessionRepository {
 
   /// Host mengakhiri sesi untuk seluruh anggota (status = 'selesai')
   Future<void> endSessionForEveryone(String roomId) async {
-    await _db.ref('rooms/$roomId').update({
-      'status': 'selesai',
-    });
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final roomSnap = await _db.ref('rooms/$roomId').get();
+    String? code;
+    String name = 'Ruang Belajar';
+    int durationMin = 45;
+    int startAt = now;
+    String hostUid = '';
+
+    if (roomSnap.exists && roomSnap.value is Map) {
+      final rMap = roomSnap.value as Map;
+      code = rMap['code']?.toString();
+      name = rMap['name']?.toString() ?? 'Ruang Belajar';
+      durationMin = (rMap['durationMinutes'] as num?)?.toInt() ?? 45;
+      startAt = (rMap['startAt'] as num?)?.toInt() ?? now;
+      hostUid = rMap['hostUid']?.toString() ?? '';
+    }
+
+    final updates = <String, dynamic>{
+      'rooms/$roomId/status': 'selesai',
+      if (code != null) 'roomCodes/$code/active': false,
+    };
+
+    try {
+      final membersSnap = await _db.ref('roomMembers/$roomId').get();
+      if (membersSnap.exists && membersSnap.value is Map) {
+        final membersMap = membersSnap.value as Map;
+        membersMap.forEach((mUid, _) {
+          updates['userRooms/$mUid/$roomId/status'] = 'selesai';
+          updates['userActiveRoom/$mUid'] = null;
+          updates['userSessions/$mUid/$roomId'] = {
+            'roomId': roomId,
+            'roomName': name,
+            'roomCode': code ?? '',
+            'startAt': startAt,
+            'completedAt': now,
+            'durationDoneMin': ((now - startAt) / 60000).ceil().clamp(1, durationMin),
+            'violationCount': 0,
+            'endedHow': 'host',
+            'isCreatedByMe': mUid == hostUid,
+            'status': 'Selesai',
+            'memberCount': membersMap.length,
+            'meetingLink': code != null ? 'https://kerkom.app/j/$code' : '',
+          };
+        });
+      }
+    } catch (_) {}
+
+    await _db.ref().update(updates);
   }
 
   /// Mengubah status anggota (e.g. 'aman', 'terangkat', 'keluar')

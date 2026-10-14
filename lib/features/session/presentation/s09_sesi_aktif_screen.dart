@@ -55,6 +55,13 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
 
     // 2. Hubungkan monitor controller ke deteksi pelanggaran lokal
     final monitorController = ref.read(monitorControllerProvider);
+    final sampler = ref.read(samplerProvider);
+    sampler.start();
+    if (monitorController.state == MonitorState.idle) {
+      monitorController.start();
+      monitorController.forceCalibrationSuccess();
+    }
+
     _sensorViolationSub?.cancel();
     _sensorViolationSub = monitorController.eventStream.listen((event) {
       if (!_isNavigatingAway) {
@@ -125,6 +132,8 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
     final room = ref.read(roomProvider(widget.roomId)).value;
     final repo = ref.read(sessionRepositoryProvider);
 
+    final members = ref.read(roomMembersProvider(widget.roomId)).value ?? [];
+
     if (currentUid != null && room != null) {
       // 1. Tandai status keluar di roomMembers
       await repo.updateMemberState(roomId: widget.roomId, uid: currentUid, state: 'keluar');
@@ -132,6 +141,7 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
       // 2. Simpan rekaman sesi lokal
       final startAt = room.startAt ?? DateTime.now().millisecondsSinceEpoch;
       final durationDone = ((DateTime.now().millisecondsSinceEpoch - startAt) / 60000).ceil();
+      final now = DateTime.now().millisecondsSinceEpoch;
 
       await repo.saveUserSession(
         uid: currentUid,
@@ -139,9 +149,16 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
           roomId: widget.roomId,
           roomName: room.name,
           startAt: startAt,
+          completedAt: now,
           durationDoneMin: durationDone,
           violationCount: 0,
           endedHow: 'keluar',
+          roomCode: room.code,
+          note: room.note,
+          meetingLink: room.meetingLink ?? 'https://kerkom.app/j/${room.code}',
+          memberCount: members.isNotEmpty ? members.length : 1,
+          isCreatedByMe: room.hostUid == currentUid,
+          status: 'Selesai',
         ),
       );
     }
@@ -194,10 +211,12 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     final room = ref.read(roomProvider(widget.roomId)).value;
     final repo = ref.read(sessionRepositoryProvider);
+    final members = ref.read(roomMembersProvider(widget.roomId)).value ?? [];
 
     if (currentUid != null && room != null) {
       final startAt = room.startAt ?? DateTime.now().millisecondsSinceEpoch;
       final durationDone = room.durationMinutes;
+      final now = DateTime.now().millisecondsSinceEpoch;
 
       await repo.saveUserSession(
         uid: currentUid,
@@ -205,9 +224,16 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
           roomId: widget.roomId,
           roomName: room.name,
           startAt: startAt,
+          completedAt: now,
           durationDoneMin: durationDone,
           violationCount: 0,
           endedHow: endedHow,
+          roomCode: room.code,
+          note: room.note,
+          meetingLink: room.meetingLink ?? 'https://kerkom.app/j/${room.code}',
+          memberCount: members.isNotEmpty ? members.length : 1,
+          isCreatedByMe: room.hostUid == currentUid,
+          status: 'Selesai',
         ),
       );
     }
@@ -482,6 +508,27 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
                                                         fontSize: 9,
                                                         fontWeight: FontWeight.w800,
                                                         color: AppColors.primary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                                if (member.isHost) ...[
+                                                  const SizedBox(width: 4),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(
+                                                      horizontal: 5,
+                                                      vertical: 1.5,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFFFEF3C7),
+                                                      borderRadius: BorderRadius.circular(6),
+                                                    ),
+                                                    child: const Text(
+                                                      '👑 Ketua',
+                                                      style: TextStyle(
+                                                        fontSize: 9,
+                                                        fontWeight: FontWeight.w800,
+                                                        color: Color(0xFFB45309),
                                                       ),
                                                     ),
                                                   ),

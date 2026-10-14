@@ -95,24 +95,54 @@ class S21IntegrasiKalenderScreen extends ConsumerWidget {
                       inactiveTrackColor: const Color(0xFFCBD5E1),
                       onChanged: (val) async {
                         try {
-                          await ref.read(authRepositoryProvider).updateCalendarSettings(
-                                googleCalendarConnected: val,
+                          if (val) {
+                            final success = await ref
+                                .read(authRepositoryProvider)
+                                .requestGoogleCalendarConsent();
+                            if (!context.mounted) return;
+                            if (success) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Persetujuan Google Calendar berhasil! (${user?.email ?? 'akun aktif'})',
+                                  ),
+                                  backgroundColor: AppColors.green,
+                                  duration: const Duration(seconds: 2),
+                                ),
                               );
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(val
-                                    ? 'Google Calendar terhubung (${user?.email ?? 'akun aktif'})'
-                                    : 'Google Calendar diputuskan'),
-                                backgroundColor: val ? AppColors.green : AppColors.navy,
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Persetujuan Google Calendar dibatalkan.'),
+                                  backgroundColor: AppColors.navy,
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          } else {
+                            await ref.read(authRepositoryProvider).updateCalendarSettings(
+                                  googleCalendarConnected: false,
+                                );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Google Calendar diputuskan.'),
+                                  backgroundColor: AppColors.navy,
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
                           }
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Gagal: $e'), backgroundColor: AppColors.red),
+                              SnackBar(
+                                content: Text(
+                                  'Gagal menghubungkan Google Calendar: Pastikan SHA-1 terdaftar di Firebase Console.',
+                                ),
+                                backgroundColor: AppColors.red,
+                                duration: const Duration(seconds: 4),
+                              ),
                             );
                           }
                         }

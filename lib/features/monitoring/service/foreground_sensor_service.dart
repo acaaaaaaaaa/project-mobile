@@ -208,15 +208,16 @@ class ForegroundSensorServiceManager {
         channelId: 'kerkom_focus_monitoring',
         channelName: 'Pemantauan Fokus Layar Mati',
         channelDescription: 'Menjaga sensor giroskop & akselerometer tetap aktif selama sesi belajar',
-        channelImportance: NotificationChannelImportance.HIGH,
-        priority: NotificationPriority.HIGH,
+        channelImportance: NotificationChannelImportance.MAX,
+        priority: NotificationPriority.MAX,
+        visibility: NotificationVisibility.VISIBILITY_PUBLIC,
       ),
       iosNotificationOptions: const IOSNotificationOptions(
         showNotification: false,
         playSound: false,
       ),
       foregroundTaskOptions: ForegroundTaskOptions(
-        eventAction: ForegroundTaskEventAction.repeat(5000),
+        eventAction: ForegroundTaskEventAction.repeat(1000),
         autoRunOnBoot: false,
         autoRunOnMyPackageReplaced: false,
         allowWakeLock: true,
@@ -238,6 +239,7 @@ class ForegroundSensorServiceManager {
     final reqResult = await FlutterForegroundTask.requestNotificationPermission();
     if (reqResult == NotificationPermission.denied) {
       debugPrint('Notification permission denied');
+      return false;
     }
 
     final serviceRunning = await FlutterForegroundTask.isRunningService;

@@ -40,7 +40,7 @@ class Calibrator {
 
   Calibrator({
     this.config = const MonitorConfig(),
-    this.requiredDurationMs = 3000,
+    this.requiredDurationMs = 1500,
   });
 
   CalibrationStatus get status => _status;
@@ -59,6 +59,24 @@ class Calibrator {
     _accAz = 0.0;
     _result = null;
     _status = CalibrationStatus.inProgress;
+  }
+
+  /// Paksa kalibrasi selesai jika batas waktu countdown telah habis
+  CalibrationStatus forceSuccess({double? roll, double? pitch}) {
+    final avgAx = _count > 0 ? _accAx / _count : 0.0;
+    final avgAy = _count > 0 ? _accAy / _count : 0.0;
+    final avgAz = _count > 0 ? _accAz / _count : 9.80665;
+    final calcRoll = roll ?? (atan2(avgAy, avgAz) * 180.0 / pi);
+    final calcPitch = pitch ?? (atan2(-avgAx, sqrt(avgAy * avgAy + avgAz * avgAz)) * 180.0 / pi);
+
+    _result = CalibrationData(
+      meanMagnitude: _count > 0 ? _mean : 9.80665,
+      stdMagnitude: max(currentStd, config.epsilonStd),
+      baselineRoll: calcRoll,
+      baselinePitch: calcPitch,
+    );
+    _status = CalibrationStatus.success;
+    return _status;
   }
 
   /// Tambahkan cuplikan sensor ke dalam algoritma online Welford
@@ -80,9 +98,10 @@ class Calibrator {
     _accAz += sample.az;
 
     final elapsed = sample.timestampMs - _startMs!;
-    if (elapsed >= requiredDurationMs && _count >= 50) {
+    if (elapsed >= requiredDurationMs && _count >= 25) {
       final std = currentStd;
-      if (std <= config.maxCalibrationStd) {
+      // Berikan toleransi kestabilan yang wajar agar tidak stuck saat ponsel dipegang sebentar
+      if (std <= 0.8 || elapsed >= 2500) {
         final avgAx = _accAx / _count;
         final avgAy = _accAy / _count;
         final avgAz = _accAz / _count;

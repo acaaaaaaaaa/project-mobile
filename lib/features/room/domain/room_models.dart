@@ -11,6 +11,7 @@ class RoomModel {
   final int remainingSeconds;
   final String? reminder;
   final String? note;
+  final String? meetingLink;
 
   int? get startedAt => startAt;
 
@@ -27,6 +28,7 @@ class RoomModel {
     required this.remainingSeconds,
     this.reminder,
     this.note,
+    this.meetingLink,
   });
 
   factory RoomModel.fromMap(String id, Map<dynamic, dynamic> map) {
@@ -67,6 +69,8 @@ class RoomModel {
       remainingSeconds: remainingSeconds,
       reminder: map['reminder']?.toString(),
       note: map['note']?.toString(),
+      meetingLink: map['meetingLink']?.toString() ??
+          (map['code'] != null ? 'https://kerkom.app/j/${map['code']}' : null),
     );
   }
 
@@ -84,6 +88,7 @@ class RoomModel {
       'remainingSeconds': remainingSeconds,
       if (reminder != null) 'reminder': reminder,
       if (note != null) 'note': note,
+      if (meetingLink != null) 'meetingLink': meetingLink,
     };
   }
 
@@ -93,6 +98,8 @@ class RoomModel {
     int? remainingSeconds,
     int? startAt,
     int? endAt,
+    String? note,
+    String? meetingLink,
   }) {
     return RoomModel(
       id: id,
@@ -105,6 +112,9 @@ class RoomModel {
       startAt: startAt ?? this.startAt,
       endAt: endAt ?? this.endAt,
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
+      reminder: reminder,
+      note: note ?? this.note,
+      meetingLink: meetingLink ?? this.meetingLink,
     );
   }
 }

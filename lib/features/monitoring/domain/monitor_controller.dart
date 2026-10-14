@@ -69,6 +69,8 @@ class MonitorController {
   MonitorState _state = MonitorState.idle;
   CalibrationData? _calibration;
   StreamSubscription<SensorSample>? _sampleSub;
+  double _lastZScore = 0.0;
+  double _lastGyroRms = 0.0;
 
   final _stateController = StreamController<MonitorState>.broadcast(sync: true);
   final _eventController = StreamController<ViolationEvent>.broadcast(sync: true);
@@ -109,16 +111,29 @@ class MonitorController {
     _tiltEstimator.reset();
     _featureExtractor.reset();
     _violationDetector.reset();
+    _lastZScore = 0.0;
+    _lastGyroRms = 0.0;
     _state = MonitorState.calibrating;
     _stateController.add(_state);
+  }
+
+  void forceCalibrationSuccess() {
+    final status = _calibrator.forceSuccess();
+    if (status == CalibrationStatus.success) {
+      _calibration = _calibrator.result;
+      _tiltEstimator.setBaseline(
+        _calibration!.baselineRoll,
+        _calibration!.baselinePitch,
+      );
+      _state = MonitorState.armed;
+      _stateController.add(_state);
+    }
   }
 
   void processSample(SensorSample sample) {
     double currentRoll = 0.0;
     double currentPitch = 0.0;
     double deltaTilt = 0.0;
-    double zScore = 0.0;
-    double gyroRms = 0.0;
 
     switch (_state) {
       case MonitorState.idle:
@@ -151,8 +166,8 @@ class MonitorController {
         final features = _featureExtractor.addSample(sample, deltaTilt, _calibration);
 
         if (features != null) {
-          zScore = features.zScore;
-          gyroRms = features.gyroRms;
+          _lastZScore = features.zScore;
+          _lastGyroRms = features.gyroRms;
           final detection = _violationDetector.evaluate(features);
 
           if (_state == MonitorState.armed && detection == DetectionStatus.violation) {
@@ -162,8 +177,8 @@ class MonitorController {
               ViolationEvent(
                 timestampMs: sample.timestampMs,
                 deltaTilt: deltaTilt,
-                zScore: zScore,
-                gyroRms: gyroRms,
+                zScore: _lastZScore,
+                gyroRms: _lastGyroRms,
               ),
             );
           } else if (_state == MonitorState.violation && detection == DetectionStatus.normal) {
@@ -189,7 +204,7 @@ class MonitorController {
       roll: currentRoll,
       pitch: currentPitch,
       deltaTilt: deltaTilt,
-      zScore: zScore,
+      zScore: _lastZScore,
       state: _state.name,
     );
 
@@ -199,9 +214,9 @@ class MonitorController {
         roll: currentRoll,
         pitch: currentPitch,
         deltaTilt: deltaTilt,
-        zScore: zScore,
+        zScore: _lastZScore,
         magnitude: sample.magnitude,
-        gyroRms: gyroRms,
+        gyroRms: _lastGyroRms,
         calibration: _calibration,
       ),
     );

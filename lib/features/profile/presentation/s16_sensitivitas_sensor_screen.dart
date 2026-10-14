@@ -404,7 +404,13 @@ class _S16SensitivitasSensorScreenState extends ConsumerState<S16SensitivitasSen
                         _buildTelemetryItem('Akselerasi', '${magnitude.toStringAsFixed(2)} m/s²'),
                         _buildTelemetryItem(
                           'Status',
-                          currentState.name.toUpperCase(),
+                          switch (currentState) {
+                            MonitorState.violation => 'TERANGKAT',
+                            MonitorState.armed => 'AKTIF',
+                            MonitorState.calibrating => 'KALIBRASI',
+                            MonitorState.recovering => 'PEMULIHAN',
+                            MonitorState.idle => 'SIAGA',
+                          },
                           color: isViolation
                               ? AppColors.red
                               : (isCalibrating ? AppColors.amber : AppColors.primary),
