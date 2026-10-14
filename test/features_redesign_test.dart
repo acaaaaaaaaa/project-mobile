@@ -90,6 +90,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          userRoomsStreamProvider.overrideWith((ref) => Stream.value([])),
           allRoomsProvider.overrideWith((ref) => Stream.value([])),
           userSessionsProvider.overrideWith((ref) => Stream.value([])),
         ],

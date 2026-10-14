@@ -1,4 +1,4 @@
-import 'dart:io';
+import '../../../core/utils/platform_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,8 +64,6 @@ class S19SheetIzinPemantauanContent extends ConsumerStatefulWidget {
 
   /// Helper untuk membuka S19 sebagai Modal Bottom Sheet
   static Future<String?> show(BuildContext context) {
-    if (!Platform.isAndroid) return Future.value('denied');
-
     return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -105,7 +103,7 @@ class _S19SheetIzinPemantauanContentState extends ConsumerState<S19SheetIzinPema
     setState(() => _isLoading = true);
 
     try {
-      if (Platform.isAndroid) {
+      if (AppPlatform.isAndroid) {
         // 1. Jika memilih 'Selalu', minta pengecualian optimasi baterai sistem
         if (_selected == MonitorPermissionOption.always) {
           final isIgnoring = await FlutterForegroundTask.isIgnoringBatteryOptimizations;

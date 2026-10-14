@@ -9,7 +9,6 @@ import '../../session/presentation/session_controller.dart';
 
 enum NotificationCategory {
   sessionStarting,
-  roomInvitation,
   sessionCompleted,
   memberUpdate,
   sessionCancelled,
@@ -62,44 +61,60 @@ class _S22NotifikasiScreenState extends ConsumerState<S22NotifikasiScreen> {
   final Set<String> _readIds = {};
 
   List<NotificationItem> _generateNotifications() {
+    final userRooms = ref.watch(userRoomsStreamProvider).value ?? [];
     final allRooms = ref.watch(allRoomsProvider).value ?? [];
     final sessions = ref.watch(userSessionsProvider).value ?? [];
 
     final list = <NotificationItem>[];
 
-    // Notification from latest active room
-    if (allRooms.isNotEmpty) {
+    // 1. Notifikasi dari ruang aktif milik pengguna
+    if (userRooms.isNotEmpty) {
+      final activeRooms = userRooms.where((r) => r.status != 'selesai').toList();
+      for (final room in activeRooms) {
+        list.add(
+          NotificationItem(
+            id: 'start_${room.roomId}',
+            title: 'Sesi akan dimulai: ${room.name}',
+            message: 'Ruang "${room.name}" dijadwalkan segera. Klik untuk masuk ke lobi ruangan.',
+            time: '15 menit lagi',
+            group: 'Hari ini',
+            category: NotificationCategory.sessionStarting,
+            route: '/lobby/${room.roomId}',
+          ),
+        );
+
+        list.add(
+          NotificationItem(
+            id: 'member_${room.roomId}',
+            title: 'Pembaruan anggota: ${room.name}',
+            message: 'Anggota telah bergabung di ruang "${room.name}". Buka lobi untuk melihat daftar anggota.',
+            time: '1 jam lalu',
+            group: 'Hari ini',
+            category: NotificationCategory.memberUpdate,
+            route: '/lobby/${room.roomId}',
+          ),
+        );
+      }
+    } else if (allRooms.isNotEmpty) {
       final room = allRooms.first;
       list.add(
         NotificationItem(
           id: 'room_${room.id}',
-          title: 'Sesi akan dimulai',
-          message: 'Ruang "${room.name}" dijadwalkan segera. Kode: ${room.code}',
-          time: '10 menit lalu',
+          title: 'Sesi akan dimulai: ${room.name}',
+          message: 'Ruang "${room.name}" siap digunakan. Klik untuk masuk ke lobi.',
+          time: '30 menit lalu',
           group: 'Hari ini',
           category: NotificationCategory.sessionStarting,
-          route: '/rooms',
-        ),
-      );
-
-      list.add(
-        NotificationItem(
-          id: 'member_${room.id}',
-          title: 'Pembaruan anggota ruang',
-          message: 'Anggota telah bergabung di "${room.name}". Siap untuk fokus bersama.',
-          time: '1 jam lalu',
-          group: 'Hari ini',
-          category: NotificationCategory.memberUpdate,
-          route: '/rooms',
+          route: '/lobby/${room.id}',
         ),
       );
     } else {
       list.add(
         const NotificationItem(
           id: 'notif_default_1',
-          title: 'Sesi akan dimulai',
-          message: 'Ruang kerja kelompok Anda siap dimulai sesuai jadwal.',
-          time: '30 menit lalu',
+          title: 'Ruang belajar siap',
+          message: 'Buat atau gabung ke ruang belajar kelompok Anda.',
+          time: 'Baru saja',
           group: 'Hari ini',
           category: NotificationCategory.sessionStarting,
           route: '/rooms',
@@ -107,54 +122,33 @@ class _S22NotifikasiScreenState extends ConsumerState<S22NotifikasiScreen> {
       );
     }
 
-    list.add(
-      const NotificationItem(
-        id: 'notif_invite',
-        title: 'Undangan ruang',
-        message: 'Teman mengundang Anda bergabung ke ruang diskusi Capstone.',
-        time: '3 jam lalu',
-        group: 'Hari ini',
-        category: NotificationCategory.roomInvitation,
-        route: '/rooms',
-      ),
-    );
-
-    // From completed sessions
+    // 2. Notifikasi dari sesi yang telah selesai
     if (sessions.isNotEmpty) {
-      final sess = sessions.first;
-      list.add(
-        NotificationItem(
-          id: 'sess_${sess.roomId}',
-          title: 'Sesi selesai',
-          message: 'Sesi "${sess.roomName}" telah selesai selama ${sess.durationDoneMin} menit.',
-          time: 'Kemarin, 16:45',
-          group: 'Kemarin',
-          category: NotificationCategory.sessionCompleted,
-          route: '/history',
-        ),
-      );
-    } else {
-      list.add(
-        const NotificationItem(
-          id: 'notif_default_completed',
-          title: 'Sesi selesai',
-          message: 'Sesi fokus kerja kelompok Tugas Akhir telah diselesaikan.',
-          time: 'Kemarin, 14:45',
-          group: 'Kemarin',
-          category: NotificationCategory.sessionCompleted,
-          route: '/history',
-        ),
-      );
+      for (final sess in sessions.take(3)) {
+        list.add(
+          NotificationItem(
+            id: 'sess_${sess.roomId}',
+            title: 'Sesi selesai: ${sess.roomName}',
+            message: 'Sesi "${sess.roomName}" telah diselesaikan (${sess.durationDoneMin} menit). Klik untuk melihat detail riwayat.',
+            time: 'Kemarin',
+            group: 'Kemarin',
+            category: NotificationCategory.sessionCompleted,
+            route: '/history-detail/${sess.roomId}',
+          ),
+        );
+      }
     }
 
+    // 3. Notifikasi sistem dan kalibrasi
     list.add(
       const NotificationItem(
-        id: 'notif_sys',
-        title: 'Notifikasi sistem',
-        message: 'Kalibrasi sensor dan sinkronisasi kalender siap digunakan.',
+        id: 'notif_sys_sensor',
+        title: 'Sensitivitas Sensor Siap',
+        message: 'Pengaturan kalibrasi gravitasi dan batas kemiringan siap digunakan. Klik untuk cek kalibrasi.',
         time: 'Kemarin, 09:00',
         group: 'Kemarin',
         category: NotificationCategory.systemNotice,
+        route: '/sensor-sensitivity',
       ),
     );
 
@@ -253,11 +247,6 @@ class _S22NotifikasiScreenState extends ConsumerState<S22NotifikasiScreen> {
         color: AppColors.primary,
         bg: const Color(0xFFEFF6FF),
       ),
-      NotificationCategory.roomInvitation => (
-        icon: Icons.mark_email_unread_outlined,
-        color: const Color(0xFF8B5CF6),
-        bg: const Color(0xFFF3E8FF),
-      ),
       NotificationCategory.sessionCompleted => (
         icon: Icons.check_circle_outline_rounded,
         color: const Color(0xFF10B981),
@@ -288,7 +277,15 @@ class _S22NotifikasiScreenState extends ConsumerState<S22NotifikasiScreen> {
             _readIds.add(item.id);
           });
           if (item.route != null) {
-            context.go(item.route!);
+            final route = item.route!;
+            if (route.startsWith('/lobby/') ||
+                route.startsWith('/active-session/') ||
+                route.startsWith('/history-detail/') ||
+                route.startsWith('/sensor-sensitivity')) {
+              context.push(route);
+            } else {
+              context.go(route);
+            }
           }
         },
         borderRadius: BorderRadius.circular(16),

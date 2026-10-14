@@ -164,6 +164,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const Scaffold(body: S06SheetGabungKode()),
       ),
       GoRoute(
+        path: '/j/:code',
+        builder: (context, state) {
+          final code = state.pathParameters['code'] ?? '';
+          return Scaffold(body: S06SheetGabungKode(initialCode: code));
+        },
+      ),
+      GoRoute(
         path: '/lobby/:roomId',
         builder: (context, state) {
           final roomId = state.pathParameters['roomId'] ?? '';

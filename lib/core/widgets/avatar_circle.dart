@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
@@ -67,11 +68,17 @@ class AvatarCircle extends StatelessWidget {
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => _buildInitials(),
                 )
-              : Image.network(
-                  photoUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => _buildInitials(),
-                ))
+              : (photoUrl!.startsWith('data:image/') || photoUrl!.startsWith('base64,'))
+                  ? Image.memory(
+                      base64Decode(photoUrl!.split(',').last),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => _buildInitials(),
+                    )
+                  : Image.network(
+                      photoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => _buildInitials(),
+                    ))
           : _buildInitials(),
     );
 

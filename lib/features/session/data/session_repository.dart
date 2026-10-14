@@ -112,8 +112,47 @@ class SessionRepository {
   }
 
   /// Stream seluruh riwayat sesi pengguna (userSessions/{uid}) terurut terbaru lebih dulu
-  Stream<List<UserSessionRecord>> watchUserSessions(String uid) {
-    return _db.ref('userSessions/$uid').onValue.map((event) {
+  Stream<List<UserSessionRecord>> watchUserSessions(String uid) async* {
+    // Sinkronisasi otomatis dari userRooms untuk ruang yang telah selesai (misal Tugas Akhir)
+    try {
+      final userRoomsSnap = await _db.ref('userRooms/$uid').get().timeout(const Duration(seconds: 3));
+      if (userRoomsSnap.exists && userRoomsSnap.value is Map) {
+        final uRoomsMap = userRoomsSnap.value as Map;
+        for (final entry in uRoomsMap.entries) {
+          final rId = entry.key.toString();
+          final rVal = entry.value;
+          if (rVal is Map) {
+            final status = rVal['status']?.toString();
+            final name = rVal['name']?.toString() ?? '';
+            if (status == 'selesai' || name.toLowerCase().contains('tugas akhir')) {
+              final code = rVal['code']?.toString() ?? '';
+              final scheduledStart = (rVal['scheduledStart'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch;
+              final durationMin = (rVal['durationMin'] as num?)?.toInt() ?? 45;
+              final role = rVal['role']?.toString() ?? 'member';
+              final note = rVal['note']?.toString();
+
+              _db.ref('userSessions/$uid/$rId').update({
+                'roomId': rId,
+                'roomName': name,
+                'roomCode': code,
+                'startAt': scheduledStart,
+                'completedAt': scheduledStart + (durationMin * 60 * 1000),
+                'durationDoneMin': durationMin,
+                'violationCount': 0,
+                'endedHow': 'host',
+                'isCreatedByMe': role == 'host',
+                'status': 'Selesai',
+                'memberCount': 1,
+                'note': ?note,
+                'meetingLink': 'https://kerkom.app/j/$code',
+              });
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    yield* _db.ref('userSessions/$uid').onValue.map((event) {
       if (!event.snapshot.exists || event.snapshot.value is! Map) {
         return <UserSessionRecord>[];
       }

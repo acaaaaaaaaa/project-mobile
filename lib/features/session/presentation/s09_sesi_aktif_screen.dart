@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import '../../../core/utils/platform_util.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,7 +66,7 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
     });
 
     // 3. Mulai Foreground Service (Android jika diizinkan) atau Wakelock (iOS / fallback)
-    if (Platform.isAndroid && monitorPerm != 'denied') {
+    if (AppPlatform.isAndroid && monitorPerm != 'denied') {
       ForegroundSensorServiceManager.start(
         roomId: widget.roomId,
         uid: currentUid ?? '',
@@ -98,7 +98,7 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _sensorViolationSub?.cancel();
-    if (Platform.isAndroid) {
+    if (AppPlatform.isAndroid) {
       ForegroundSensorServiceManager.stop();
     }
     WakelockPlus.disable();
@@ -116,7 +116,7 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
     _isNavigatingAway = true;
 
     // Hentikan service latar belakang & lepaskan wakelock
-    if (Platform.isAndroid) {
+    if (AppPlatform.isAndroid) {
       await ForegroundSensorServiceManager.stop();
     }
     await WakelockPlus.disable();
@@ -186,7 +186,7 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
     if (_isNavigatingAway) return;
     _isNavigatingAway = true;
 
-    if (Platform.isAndroid) {
+    if (AppPlatform.isAndroid) {
       await ForegroundSensorServiceManager.stop();
     }
     await WakelockPlus.disable();

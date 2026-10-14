@@ -9,7 +9,9 @@ import '../../../core/widgets/secondary_button.dart';
 import '../presentation/room_controller.dart';
 
 class S06SheetGabungKode extends ConsumerStatefulWidget {
-  const S06SheetGabungKode({super.key});
+  final String? initialCode;
+
+  const S06SheetGabungKode({super.key, this.initialCode});
 
   @override
   ConsumerState<S06SheetGabungKode> createState() => _S06SheetGabungKodeState();
@@ -26,6 +28,9 @@ class _S06SheetGabungKodeState extends ConsumerState<S06SheetGabungKode> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialCode != null && widget.initialCode!.isNotEmpty) {
+      _codeController.text = widget.initialCode!.replaceAll('-', '').toUpperCase();
+    }
     _codeController.addListener(() {
       setState(() {});
     });

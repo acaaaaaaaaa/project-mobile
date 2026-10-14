@@ -1,4 +1,4 @@
-import 'dart:io';
+import '../../../core/utils/platform_util.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 /// Helper untuk membuka pengaturan baterai dan panduan OEM (Xiaomi, Samsung, Oppo, Vivo)
@@ -7,7 +7,7 @@ class OemBatteryHelper {
 
   /// Membuka halaman pengaturan optimasi baterai sistem Android
   static Future<bool> openBatteryOptimizationSettings() async {
-    if (!Platform.isAndroid) return false;
+    if (!AppPlatform.isAndroid) return false;
     try {
       return await FlutterForegroundTask.openIgnoreBatteryOptimizationSettings();
     } catch (_) {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:vibration/vibration.dart';
 
 class AlarmService {
@@ -28,13 +29,18 @@ class AlarmService {
     final shouldPlayAudio = alarmMode == 'audio' || alarmMode == 'both';
     final shouldVibrate = alarmMode == 'vibrate' || alarmMode == 'both';
 
-    if (shouldPlayAudio && _cachedBeepWav != null) {
+    if (shouldPlayAudio) {
       try {
         await _player.setVolume(volume.clamp(0.0, 1.0));
         await _player.setReleaseMode(ReleaseMode.loop);
-        await _player.play(BytesSource(_cachedBeepWav!));
+        await _player.play(AssetSource('audio-pelanggaran.wav'));
       } catch (e) {
-        debugPrint('AlarmService audio error: $e');
+        debugPrint('AlarmService asset audio error: $e. Falling back to synthesized wav...');
+        if (_cachedBeepWav != null) {
+          try {
+            await _player.play(BytesSource(_cachedBeepWav!));
+          } catch (_) {}
+        }
       }
     }
 
@@ -43,10 +49,14 @@ class AlarmService {
         final hasVibrator = await Vibration.hasVibrator();
         if (hasVibrator == true) {
           // Pola getar berulang: diam 400ms, getar 600ms
-          await Vibration.vibrate(pattern: [400, 600, 400, 600], repeat: 0);
+          await Vibration.vibrate(pattern: [0, 600, 300, 600], repeat: 0);
+        } else {
+          HapticFeedback.vibrate();
         }
       } catch (e) {
-        debugPrint('AlarmService vibration error: $e');
+        try {
+          HapticFeedback.vibrate();
+        } catch (_) {}
       }
     }
 

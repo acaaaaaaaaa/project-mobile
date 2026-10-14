@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import '../../../core/utils/platform_util.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,10 +42,10 @@ class _S08KalibrasiScreenState extends ConsumerState<S08KalibrasiScreen> {
   Future<void> _checkPermissionAndStartCalibration() async {
     if (!mounted) return;
 
-    if (Platform.isIOS) {
+    if (AppPlatform.isIOS) {
       // iOS fallback: tidak ada background sensing, layar tetap menyala
       await WakelockPlus.enable();
-    } else if (Platform.isAndroid) {
+    } else if (AppPlatform.isAndroid) {
       final user = ref.read(currentUserProvider).value;
       final perm = user?.settings.monitorPermission;
       if (perm == null || perm.isEmpty || perm == 'once') {
@@ -298,7 +298,7 @@ class _S08KalibrasiScreenState extends ConsumerState<S08KalibrasiScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        Platform.isIOS
+                        AppPlatform.isIOS
                             ? 'Catatan iOS: Layar akan tetap menyala selama sesi berjalan (pemantauan latar belakang tidak aktif di iOS).'
                             : 'Kalibrasi gravitasi akan mengunci posisi nol untuk mendeteksi ponsel diangkat.',
                         style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),

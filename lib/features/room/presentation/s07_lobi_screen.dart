@@ -18,13 +18,50 @@ class S07LobiScreen extends ConsumerWidget {
 
   const S07LobiScreen({super.key, required this.roomId});
 
-  void _showLeaveDialog(BuildContext context, WidgetRef ref) {
+  void _showBackDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Keluar dari Lobi?'),
+        title: const Text('Kembali ke Halaman Sebelumnya?'),
         content: const Text(
-          'Jika Anda adalah host, hak kepemimpinan ruang akan dialihkan otomatis ke anggota berikutnya.',
+          'Ruang belajar ini tetap aktif dan jadwalnya tersimpan. Anda dapat kembali masuk ke lobi ini kapan saja sebelum atau saat sesi dimulai.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              if (context.mounted) {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else {
+                  context.go('/rooms');
+                }
+              }
+            },
+            child: const Text('Ya, Kembali'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEndRoomDialog(BuildContext context, WidgetRef ref, bool isHost) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(isHost ? 'Akhiri & Tutup Ruangan?' : 'Keluar dari Ruangan?'),
+        content: Text(
+          isHost
+              ? 'Ruang belajar akan diakhiri dan dipindahkan ke Riwayat. Anda yakin ingin mengakhiri sesi sekarang?'
+              : 'Anda akan keluar dari ruangan ini.',
         ),
         actions: [
           TextButton(
@@ -41,7 +78,7 @@ class S07LobiScreen extends ConsumerWidget {
               await ref.read(roomRepositoryProvider).leaveRoom(roomId);
               if (context.mounted) context.go('/home');
             },
-            child: const Text('Keluar'),
+            child: Text(isHost ? 'Akhiri Ruang' : 'Keluar'),
           ),
         ],
       ),
@@ -68,7 +105,7 @@ class S07LobiScreen extends ConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-          onPressed: () => _showLeaveDialog(context, ref),
+          onPressed: () => _showBackDialog(context),
         ),
         title: Text(
           'Lobi Ruang',
@@ -312,8 +349,8 @@ class S07LobiScreen extends ConsumerWidget {
 
                   const SizedBox(height: 10),
                   DestructiveOutlineButton(
-                    text: 'Keluar Lobi',
-                    onPressed: () => _showLeaveDialog(context, ref),
+                    text: isHost ? 'Akhiri Ruangan' : 'Keluar dari Ruangan',
+                    onPressed: () => _showEndRoomDialog(context, ref, isHost),
                   ),
                   const SizedBox(height: 8),
                 ],

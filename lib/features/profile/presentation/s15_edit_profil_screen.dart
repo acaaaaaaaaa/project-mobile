@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_card.dart';
@@ -144,53 +146,122 @@ class _S15EditProfilScreenState extends ConsumerState<S15EditProfilScreen> {
     );
   }
 
-  void _showCustomUrlDialog() {
-    final tempController = TextEditingController(text: _selectedPhotoUrl);
-    showDialog(
+  Future<void> _pickImageFromDevice() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        final base64String = 'data:image/png;base64,${base64Encode(bytes)}';
+        setState(() {
+          _selectedPhotoUrl = base64String;
+          _photoUrlController.text = 'Foto dari perangkat';
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto dari perangkat berhasil dipilih!'),
+              backgroundColor: AppColors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memilih foto: $e'),
+            backgroundColor: AppColors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showPhotoOptionsSheet() {
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Tautan Foto Profil'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Masukkan tautan (URL) gambar untuk foto profil Anda:',
-              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: tempController,
-              decoration: InputDecoration(
-                hintText: 'https://example.com/avatar.jpg',
-                filled: true,
-                fillColor: AppColors.surfaceContainer,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Ganti Foto Profil',
+                textAlign: TextAlign.center,
+                style: AppTheme.headlineSmall.copyWith(fontWeight: FontWeight.w800, color: AppColors.navy),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+                ),
+                title: const Text('Pilih dari Dokumen / Galeri HP', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Unggah berkas foto langsung dari perangkat Anda', style: TextStyle(fontSize: 12)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickImageFromDevice();
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3E8FF),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.face_retouching_natural_rounded, color: Color(0xFF8B5CF6)),
+                ),
+                title: const Text('Pilih Avatar Karakter', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Pilih dari 6 karakter maskot resmi KerKom', style: TextStyle(fontSize: 12)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showAvatarPicker();
+                },
+              ),
+              if (_selectedPhotoUrl.isNotEmpty)
+                ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.delete_outline_rounded, color: AppColors.red),
+                  ),
+                  title: const Text('Hapus Foto Profil', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.red)),
+                  subtitle: const Text('Gunakan inisial nama akun Anda', style: TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    setState(() {
+                      _selectedPhotoUrl = '';
+                      _photoUrlController.clear();
+                    });
+                  },
+                ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              setState(() {
-                _selectedPhotoUrl = tempController.text.trim();
-                _photoUrlController.text = _selectedPhotoUrl;
-              });
-              Navigator.pop(ctx);
-            },
-            child: const Text('Gunakan'),
-          ),
-        ],
       ),
     );
   }
@@ -274,7 +345,7 @@ class _S15EditProfilScreenState extends ConsumerState<S15EditProfilScreen> {
                             bottom: 0,
                             right: 0,
                             child: GestureDetector(
-                              onTap: _showAvatarPicker,
+                              onTap: _showPhotoOptionsSheet,
                               child: Container(
                                 width: 32,
                                 height: 32,
@@ -305,6 +376,18 @@ class _S15EditProfilScreenState extends ConsumerState<S15EditProfilScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        ElevatedButton.icon(
+                          onPressed: _pickImageFromDevice,
+                          icon: const Icon(Icons.upload_file_rounded, size: 16),
+                          label: const Text('Unggah Foto'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         OutlinedButton.icon(
                           onPressed: _showAvatarPicker,
                           icon: const Icon(Icons.face_retouching_natural_rounded, size: 16),
@@ -316,18 +399,6 @@ class _S15EditProfilScreenState extends ConsumerState<S15EditProfilScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        OutlinedButton.icon(
-                          onPressed: _showCustomUrlDialog,
-                          icon: const Icon(Icons.link_rounded, size: 16),
-                          label: const Text('URL Foto'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.navy,
-                            side: const BorderSide(color: Color(0xFFE2EDF9)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          ),
-                        ),
                         if (_selectedPhotoUrl.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           TextButton(
@@ -337,11 +408,7 @@ class _S15EditProfilScreenState extends ConsumerState<S15EditProfilScreen> {
                                 _photoUrlController.clear();
                               });
                             },
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppColors.red,
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                            ),
-                            child: const Text('Kosongkan'),
+                            child: const Text('Hapus', style: TextStyle(color: AppColors.red, fontSize: 13)),
                           ),
                         ],
                       ],

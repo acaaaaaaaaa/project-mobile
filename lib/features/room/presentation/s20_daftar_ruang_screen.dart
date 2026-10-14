@@ -1300,20 +1300,29 @@ class _EditRoomSheetContentState extends ConsumerState<_EditRoomSheetContent> {
             // Durasi Sesi
             Text('Durasi Sesi', style: AppTheme.labelMedium.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
-            DropdownButtonFormField<int>(
-              initialValue: _durationMin,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              ),
-              items: const [
-                DropdownMenuItem(value: 25, child: Text('25 menit (Pomodoro)')),
-                DropdownMenuItem(value: 45, child: Text('45 menit (Standar)')),
-                DropdownMenuItem(value: 60, child: Text('60 menit (Intensif)')),
-                DropdownMenuItem(value: 90, child: Text('90 menit (Panjang)')),
-              ],
-              onChanged: (val) {
-                if (val != null) setState(() => _durationMin = val);
+            Builder(
+              builder: (context) {
+                final standardDurations = [25, 45, 60, 90];
+                final durationItems = <DropdownMenuItem<int>>[
+                  const DropdownMenuItem(value: 25, child: Text('25 menit (Pomodoro)')),
+                  const DropdownMenuItem(value: 45, child: Text('45 menit (Standar)')),
+                  const DropdownMenuItem(value: 60, child: Text('60 menit (Intensif)')),
+                  const DropdownMenuItem(value: 90, child: Text('90 menit (Panjang)')),
+                  if (!standardDurations.contains(_durationMin))
+                    DropdownMenuItem(value: _durationMin, child: Text('$_durationMin menit (Kustom)')),
+                ];
+
+                return DropdownButtonFormField<int>(
+                  initialValue: _durationMin,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                  items: durationItems,
+                  onChanged: (val) {
+                    if (val != null) setState(() => _durationMin = val);
+                  },
+                );
               },
             ),
             const SizedBox(height: 14),
@@ -1321,20 +1330,37 @@ class _EditRoomSheetContentState extends ConsumerState<_EditRoomSheetContent> {
             // Pengingat
             Text('Pengingat', style: AppTheme.labelMedium.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
-            DropdownButtonFormField<String>(
-              initialValue: _reminder,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              ),
-              items: const [
-                DropdownMenuItem(value: '5 menit sebelumnya', child: Text('5 menit sebelumnya')),
-                DropdownMenuItem(value: '10 menit sebelumnya', child: Text('10 menit sebelumnya')),
-                DropdownMenuItem(value: '15 menit sebelumnya', child: Text('15 menit sebelumnya')),
-                DropdownMenuItem(value: 'Tidak ada', child: Text('Tidak ada')),
-              ],
-              onChanged: (val) {
-                if (val != null) setState(() => _reminder = val);
+            Builder(
+              builder: (context) {
+                final standardReminders = [
+                  '5 menit sebelumnya',
+                  '10 menit sebelumnya',
+                  '15 menit sebelumnya',
+                  'Tidak ada',
+                ];
+                final reminderItems = <DropdownMenuItem<String>>[
+                  const DropdownMenuItem(value: '5 menit sebelumnya', child: Text('5 menit sebelumnya')),
+                  const DropdownMenuItem(value: '10 menit sebelumnya', child: Text('10 menit sebelumnya')),
+                  const DropdownMenuItem(value: '15 menit sebelumnya', child: Text('15 menit sebelumnya')),
+                  const DropdownMenuItem(value: 'Tidak ada', child: Text('Tidak ada')),
+                  if (!standardReminders.contains(_reminder))
+                    DropdownMenuItem(value: _reminder, child: Text(_reminder)),
+                ];
+                final effectiveReminder = reminderItems.any((it) => it.value == _reminder)
+                    ? _reminder
+                    : 'Tidak ada';
+
+                return DropdownButtonFormField<String>(
+                  initialValue: effectiveReminder,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                  items: reminderItems,
+                  onChanged: (val) {
+                    if (val != null) setState(() => _reminder = val);
+                  },
+                );
               },
             ),
             const SizedBox(height: 14),
