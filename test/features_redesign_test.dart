@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_room/features/profile/presentation/s21_integrasi_kalender_screen.dart';
 import 'package:focus_room/features/profile/presentation/s23_tentang_aplikasi_screen.dart';
 import 'package:focus_room/features/profile/presentation/s25_pengaturan_akun_screen.dart';
 import 'package:focus_room/features/history/presentation/s24_detail_riwayat_screen.dart';
@@ -30,25 +29,6 @@ void main() {
     expect(find.text('Kebijakan Privasi'), findsOneWidget);
     expect(find.text('Syarat & Ketentuan'), findsOneWidget);
     expect(find.text('Lisensi Open Source'), findsOneWidget);
-  });
-
-  testWidgets('S21IntegrasiKalenderScreen renders Google Calendar, Outlook, and auto sync toggles', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          currentUserProvider.overrideWith((ref) => Stream.value(null)),
-        ],
-        child: const MaterialApp(
-          home: S21IntegrasiKalenderScreen(),
-        ),
-      ),
-    );
-
-    expect(find.text('Integrasi Kalender'), findsOneWidget);
-    expect(find.text('Google Calendar'), findsOneWidget);
-    expect(find.text('Outlook Calendar'), findsOneWidget);
-    expect(find.text('Sinkronisasi Otomatis'), findsOneWidget);
-    expect(find.byType(Switch), findsNWidgets(3));
   });
 
   testWidgets('S25PengaturanAkunScreen renders sensor, alarm, logout, and delete account', (tester) async {
@@ -86,23 +66,26 @@ void main() {
     expect(find.text('Hapus dari Riwayat'), findsOneWidget);
   });
 
-  testWidgets('S22NotifikasiScreen renders categories and section headers', (tester) async {
+  testWidgets('New users have no fabricated notifications', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           userRoomsStreamProvider.overrideWith((ref) => Stream.value([])),
           allRoomsProvider.overrideWith((ref) => Stream.value([])),
           userSessionsProvider.overrideWith((ref) => Stream.value([])),
+          currentUserProvider.overrideWith((ref) => Stream.value(null)),
         ],
         child: const MaterialApp(
           home: S22NotifikasiScreen(),
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     expect(find.text('Notifikasi'), findsOneWidget);
-    expect(find.text('Hari ini'), findsOneWidget);
-    expect(find.text('Kemarin'), findsOneWidget);
+    expect(find.text('Belum ada notifikasi'), findsOneWidget);
+    expect(find.text('Hari ini'), findsNothing);
+    expect(find.text('Kemarin'), findsNothing);
     expect(find.text('Tandai Baca'), findsOneWidget);
   });
 
@@ -122,7 +105,7 @@ void main() {
     expect(find.text('Profil'), findsOneWidget);
     expect(find.text('Sensitivitas Sensor'), findsOneWidget);
     expect(find.text('Pengaturan Alarm'), findsOneWidget);
-    expect(find.text('Integrasi Kalender'), findsOneWidget);
+    expect(find.text('Integrasi Kalender'), findsNothing);
     expect(find.text('Tentang Aplikasi'), findsOneWidget);
     expect(find.text('Keluar Akun'), findsOneWidget);
     expect(find.text('Hapus Akun'), findsOneWidget);

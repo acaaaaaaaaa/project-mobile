@@ -1,74 +1,49 @@
-# Panduan Resmi Integrasi Akun Google & Google Calendar (KerKom)
+# Konfigurasi login Google KerKom
 
-Dokumen ini berisi panduan langkah demi langkah untuk mengonfigurasi **Google Sign-In** dan **Google Calendar** agar izin/persetujuan resmi Google OAuth berfungsi tanpa error `PlatformException` (ApiException: 10 / 12500) saat dijalankan di perangkat Android.
+Integrasi kalender telah dihapus. Login Google hanya meminta identitas akun dan email.
 
----
+## Kondisi konfigurasi saat revisi
 
-## 1. Fingerprint Sertifikat SHA-1 & SHA-256 (Keystore)
+`android/app/google-services.json` untuk proyek `kerkom-project` masih berisi
+`oauth_client: []`. ID klien OAuth tidak dapat dibuat dengan menebak nilainya;
+konfigurasi berikut harus diselesaikan oleh pemilik proyek Firebase/Google Cloud.
 
-Aplikasi Android KerKom saat ini menggunakan keystore dengan fingerprint berikut:
+## Langkah konfigurasi Android
 
-- **Nama Paket (Package Name / Application ID)**: `com.mobcom.focusroom.focus_room`
-- **SHA-1**:
-  ```
-  03:36:3B:B9:59:75:FD:62:5D:96:AE:52:2F:05:F4:EF:7E:72:1A:BC
-  ```
-- **SHA-256**:
-  ```
-  E5:6C:89:DE:01:9B:4F:07:B5:88:E3:79:EA:D9:F0:1E:25:58:D4:88:9C:92:C1:AE:70:CC:31:66:C2:94:F0:42
-  ```
+1. Di Firebase Console proyek **kerkom-project**, aktifkan **Authentication >
+   Sign-in method > Google**, tentukan email dukungan, lalu simpan.
+2. Jalankan dari direktori `android`:
 
----
+   ```powershell
+   .\gradlew.bat signingReport
+   ```
 
-## 2. Langkah Konfigurasi di Firebase Console
+   Daftarkan SHA-1 dan SHA-256 dari sertifikat build yang benar di **Project settings >
+   Your apps > com.mobcom.focusroom.focus_room**. Untuk build yang didistribusikan
+   lewat Google Play, daftarkan juga sertifikat App Signing dari Play Console.
+   Fingerprint debug dapat berbeda antar komputer; jangan menyalin fingerprint
+   dari komputer lain sebagai pengganti sertifikat build yang sedang diuji.
+3. Unduh ulang `google-services.json` setelah penyedia Google dan sertifikat
+   dikonfigurasi. Ganti `android/app/google-services.json`.
+4. Pastikan klien aplikasi Android mempunyai paket yang sesuai dan terdapat klien
+   OAuth tipe web (`client_type: 3`). Plugin akan memakai Web Client ID tersebut
+   untuk meminta ID token bagi Firebase Authentication.
+5. Jika Web Client ID disediakan terpisah, aplikasi mendukung:
 
-1. Buka [Firebase Console](https://console.firebase.google.com/) dan pilih project Anda (**kerkom-project**).
-2. Klik ikon gerigi (Settings) di sebelah kiri atas -> pilih **Project settings**.
-3. Di tab **General**, gulir ke bawah ke bagian **Your apps** -> pilih aplikasi Android (`com.mobcom.focusroom.focus_room`).
-4. Pada bagian **SHA certificate fingerprints**, klik **Add fingerprint**:
-   - Tempelkan **SHA-1** di atas, lalu klik Simpan.
-   - Klik **Add fingerprint** lagi, tempelkan **SHA-256** di atas, lalu klik Simpan.
-5. Klik tombol **Download google-services.json**.
-6. Gantikan file lama di project ini pada lokasi:
-   `android/app/google-services.json`.
+   ```powershell
+   flutter run --dart-define=GOOGLE_WEB_CLIENT_ID=WEB_CLIENT_ID.apps.googleusercontent.com
+   ```
 
-> [!NOTE]
-> Setelah SHA-1 dimasukkan, Firebase secara otomatis membuatkan OAuth 2.0 Client ID untuk Android sehingga kolom `"oauth_client"` di `google-services.json` tidak lagi kosong.
+   Gunakan ID asli dari proyek yang sama. Pengaturan ini tidak menggantikan
+   aktivasi penyedia Google atau pendaftaran sertifikat Android.
+6. Bangun ulang aplikasi. Uji akun Google baru melalui tombol **Daftar dengan
+   Google** dan akun lama melalui **Masuk dengan Google**. Akun baru menuju
+   lengkapi profil, lalu dashboard menampilkan nama akun tersebut. Pembatalan
+   pemilihan akun harus tetap meninggalkan pengguna pada halaman autentikasi.
 
----
+Tidak ada konfigurasi Firebase jarak jauh yang diubah dalam revisi ini. Login
+Google belum dapat dinyatakan berhasil sebelum konfigurasi di atas tersedia dan
+diuji di perangkat dengan Google Play services.
 
-## 3. Langkah Konfigurasi Google Authentication
-
-1. Di menu kiri Firebase Console, klik **Build** -> **Authentication** -> tab **Sign-in method**.
-2. Pastikan penyedia **Google** berstatus **Enabled (Diaktifkan)**.
-3. Masukkan Project support email (email Anda/Google developer).
-4. Klik **Save**.
-
----
-
-## 4. Langkah Konfigurasi Google Calendar API (Google Cloud)
-
-Untuk memunculkan persetujuan resmi Google Calendar (*"KerKom ingin mengakses Kalender Google Anda"*):
-
-1. Buka [Google Cloud Console](https://console.cloud.google.com/).
-2. Pastikan project yang aktif di bagian atas adalah **kerkom-project** (nomor project: `834453228503`).
-3. Buka menu navigasi -> **APIs & Services** -> **Library**.
-4. Cari `Google Calendar API`, lalu klik tombol **Enable (Aktifkan)**.
-5. Buka **APIs & Services** -> **OAuth consent screen** (Layar persetujuan OAuth):
-   - **User Type**: Pilih *External* (atau *Internal* jika Google Workspace).
-   - **App name**: `KerKom Focus`
-   - **User support email**: Email Anda
-   - Di bagian **Scopes (Cakupan)**, klik **Add or Remove Scopes**:
-     - Tambahkan `.../auth/calendar.events` (Melihat dan mengedit acara di Google Calendar).
-   - Di bagian **Test users**: Tambahkan email akun Google yang Anda gunakan untuk menguji aplikasi di ponsel.
-   - Klik **Save and Continue**.
-
----
-
-## 5. Menguji di Aplikasi KerKom
-
-1. Buka menu **Profil** -> **Integrasi Kalender**.
-2. Aktifkan toggle **Google Calendar**:
-   - Sistem akan memunculkan dialog resmi pemilihan akun Google & persetujuan akses Google Calendar.
-   - Klik **Izinkan (Allow)**.
-   - Indikator akan langsung berubah menjadi hijau: `Persetujuan Google Calendar berhasil!`.
+Referensi: [Firebase Google authentication](https://firebase.google.com/docs/auth/flutter/federated-auth#google),
+[konfigurasi plugin Android](https://pub.dev/packages/google_sign_in_android).

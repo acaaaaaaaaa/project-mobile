@@ -49,6 +49,46 @@ void main() {
       expect(controller.state, MonitorState.armed);
     });
 
+    test('Entering a session keeps face-down calibration stable across the 180 degree boundary', () {
+      controller.startCalibration();
+      SensorSample faceDown(int t) => SensorSample(timestampMs: t,
+        ax: 0, ay: (t ~/ 20).isEven ? 0.01 : -0.01, az: -9.80665,
+        gx: 0, gy: 0, gz: 0);
+      for (int t = 20; t <= 3100; t += 20) {
+        controller.processSample(faceDown(t));
+      }
+      expect(controller.state, MonitorState.armed);
+      final baseline = controller.calibration;
+      var alarms = 0;
+      controller.eventStream.listen((_) => alarms++);
+      controller.start(preserveCalibration: true);
+      for (int t = 3120; t <= 8000; t += 20) {
+        controller.processSample(faceDown(t));
+      }
+      expect(identical(controller.calibration, baseline), isTrue);
+      expect(controller.state, MonitorState.armed);
+      expect(alarms, 0);
+    });
+
+    test('Session restart preserves baseline, emits one lift and recovers on the table', () {
+      calibrateStill();
+      final baseline = controller.calibration;
+      controller.start(preserveCalibration: true);
+      var alarms = 0;
+      controller.eventStream.listen((_) => alarms++);
+      for (int t = 3120; t <= 6500; t += 20) {
+        controller.processSample(simSource.generateSampleAtTime(t, SimulationScenario.slowLift30Deg, 3100));
+      }
+      expect(identical(controller.calibration, baseline), isTrue);
+      expect(controller.state, MonitorState.violation);
+      expect(alarms, 1);
+      for (int t = 6520; t <= 16000; t += 20) {
+        controller.processSample(simSource.generateSampleAtTime(t, SimulationScenario.flatStill));
+      }
+      expect(controller.state, MonitorState.armed);
+      expect(alarms, 1);
+    });
+
     test('(b) vibration bursts with constant tilt -> no violation', () {
       calibrateStill();
 

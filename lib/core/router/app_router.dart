@@ -17,7 +17,6 @@ import '../../features/profile/presentation/s14_profil_screen.dart';
 import '../../features/profile/presentation/s15_edit_profil_screen.dart';
 import '../../features/profile/presentation/s16_sensitivitas_sensor_screen.dart';
 import '../../features/profile/presentation/s17_pengaturan_alarm_screen.dart';
-import '../../features/profile/presentation/s21_integrasi_kalender_screen.dart';
 import '../../features/profile/presentation/s22_notifikasi_screen.dart';
 import '../../features/profile/presentation/s23_tentang_aplikasi_screen.dart';
 import '../../features/profile/presentation/s25_pengaturan_akun_screen.dart';
@@ -36,6 +35,8 @@ import '../../features/session/presentation/s12_ringkasan_sesi_screen.dart';
 import 'dart:async';
 import '../../features/debug/presentation/data_inspector_screen.dart';
 import '../widgets/bottom_nav_shell.dart';
+import 'session_access_gate.dart';
+import 'app_back_button_dispatcher.dart';
 
 class _AuthRefreshNotifier extends ChangeNotifier {
   late final StreamSubscription<dynamic> _sub;
@@ -53,7 +54,25 @@ class _AuthRefreshNotifier extends ChangeNotifier {
   }
 }
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
+GoRoute _rootRoute({
+  required String path,
+  required Widget Function(BuildContext, GoRouterState) builder,
+}) => GoRoute(
+  path: path,
+  builder: (context, state) {
+    final child = builder(context, state);
+      if (path == '/' || path == '/landing' || path == '/active-session/:roomId') {
+      return child;
+      }
+    return RootBackScope(
+      router: GoRouter.of(context),
+      navigatorKey: rootNavigatorKey,
+      child: child,
+    );
+  },
+);
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authRepo = ref.read(authRepositoryProvider);
@@ -61,12 +80,13 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(notifier.dispose);
 
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     refreshListenable: notifier,
     redirect: (context, state) {
       final isLoggedIn = authRepo.currentFirebaseUser != null;
-      final isAuthRoute = state.matchedLocation == '/landing' ||
+      final isAuthRoute =
+          state.matchedLocation == '/landing' ||
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/register' ||
           state.matchedLocation == '/forgot-password';
@@ -78,37 +98,38 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/landing';
       }
 
-      if (isLoggedIn && isAuthRoute) {
+      // Login/registration chooses its destination after the profile is saved.
+      if (isLoggedIn && state.matchedLocation == '/landing') {
         return '/home';
       }
 
       return null;
     },
     routes: [
-      GoRoute(
+      _rootRoute(
         path: '/',
         builder: (context, state) => const S01SplashScreen(),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/landing',
         builder: (context, state) => const S00LandingScreen(),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/login',
         builder: (context, state) => const S02MasukScreen(),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/register',
         builder: (context, state) => const S18DaftarScreen(),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/forgot-password',
         builder: (context, state) => const Scaffold(
           backgroundColor: Color(0xFF071930),
           body: S02SheetLupaKataSandi(),
         ),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/complete-profile',
         builder: (context, state) => const S03LengkapiProfilScreen(),
       ),
@@ -116,12 +137,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       // StatefulShellRoute for Bottom Navigation Tabs (S04, S13, S14)
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          return BottomNavShell(navigationShell: navigationShell);
+          return RootBackScope(
+            router: GoRouter.of(context),
+            navigatorKey: rootNavigatorKey,
+            child: BottomNavShell(navigationShell: navigationShell),
+          );
         },
         branches: [
           StatefulShellBranch(
             routes: [
-              GoRoute(
+              _rootRoute(
                 path: '/home',
                 builder: (context, state) => const S04BerandaScreen(),
               ),
@@ -129,7 +154,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(
+              _rootRoute(
                 path: '/rooms',
                 builder: (context, state) => const S20DaftarRuangScreen(),
               ),
@@ -137,7 +162,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(
+              _rootRoute(
                 path: '/history',
                 builder: (context, state) => const S13RiwayatScreen(),
               ),
@@ -145,7 +170,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(
+              _rootRoute(
                 path: '/profile',
                 builder: (context, state) => const S14ProfilScreen(),
               ),
@@ -155,61 +180,76 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // Other routes outside BottomNavShell
-      GoRoute(
+      _rootRoute(
         path: '/create-room',
         builder: (context, state) => const Scaffold(body: S05SheetBuatRuang()),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/join-code',
         builder: (context, state) => const Scaffold(body: S06SheetGabungKode()),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/j/:code',
         builder: (context, state) {
           final code = state.pathParameters['code'] ?? '';
           return Scaffold(body: S06SheetGabungKode(initialCode: code));
         },
       ),
-      GoRoute(
+      _rootRoute(
         path: '/lobby/:roomId',
         builder: (context, state) {
           final roomId = state.pathParameters['roomId'] ?? '';
-          return S07LobiScreen(roomId: roomId);
+          return SessionAccessGate(
+            roomId: roomId,
+            child: S07LobiScreen(roomId: roomId),
+          );
         },
       ),
-      GoRoute(
+      _rootRoute(
         path: '/calibration/:roomId',
         builder: (context, state) {
           final roomId = state.pathParameters['roomId'] ?? '';
-          return S08KalibrasiScreen(roomId: roomId);
+          return SessionAccessGate(
+            roomId: roomId,
+            child: S08KalibrasiScreen(roomId: roomId),
+          );
         },
       ),
-      GoRoute(
+      _rootRoute(
         path: '/active-session/:roomId',
         builder: (context, state) {
           final roomId = state.pathParameters['roomId'] ?? '';
-          return S09SesiAktifScreen(roomId: roomId);
+          return SessionAccessGate(
+            roomId: roomId,
+            child: S09SesiAktifScreen(roomId: roomId),
+          );
         },
       ),
-      GoRoute(
+      _rootRoute(
         path: '/alarm-violator/:roomId',
         builder: (context, state) {
           final roomId = state.pathParameters['roomId'] ?? '';
-          return S10AlarmPelanggarScreen(roomId: roomId);
+          return SessionAccessGate(
+            roomId: roomId,
+            child: S10AlarmPelanggarScreen(roomId: roomId),
+          );
         },
       ),
-      GoRoute(
+      _rootRoute(
         path: '/alarm-peer/:roomId',
         builder: (context, state) {
           final roomId = state.pathParameters['roomId'] ?? '';
           final extra = state.extra as Map<String, dynamic>?;
-          return S11AlarmAnggotaLainScreen(
+          return SessionAccessGate(
             roomId: roomId,
-            violatorName: extra?['violatorName'] ?? 'Anggota',
+            child: S11AlarmAnggotaLainScreen(
+              roomId: roomId,
+              violatorName: extra?['violatorName'] ?? 'Anggota',
+            ),
           );
         },
       ),
-      GoRoute(
+      _rootRoute(
         path: '/session-summary/:roomId',
         builder: (context, state) {
           final roomId = state.pathParameters['roomId'] ?? '';
@@ -217,50 +257,46 @@ final routerProvider = Provider<GoRouter>((ref) {
           return S12RingkasanSesiScreen(roomId: roomId, readOnly: readOnly);
         },
       ),
-      GoRoute(
+      _rootRoute(
         path: '/edit-profile',
         builder: (context, state) => const S15EditProfilScreen(),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/sensor-settings',
         builder: (context, state) => const S16SensitivitasSensorScreen(),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/sensor-sensitivity',
         builder: (context, state) => const S16SensitivitasSensorScreen(),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/alarm-settings',
         builder: (context, state) => const S17PengaturanAlarmScreen(),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/permission-info',
         builder: (context, state) => const S19SheetIzinPemantauanScreen(),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/history-detail/:roomId',
         builder: (context, state) {
           final roomId = state.pathParameters['roomId'] ?? '';
           return S24DetailRiwayatScreen(roomId: roomId);
         },
       ),
-      GoRoute(
+      _rootRoute(
         path: '/account-settings',
         builder: (context, state) => const S25PengaturanAkunScreen(),
       ),
-      GoRoute(
-        path: '/calendar-integration',
-        builder: (context, state) => const S21IntegrasiKalenderScreen(),
-      ),
-      GoRoute(
+      _rootRoute(
         path: '/notifications',
         builder: (context, state) => const S22NotifikasiScreen(),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/about-app',
         builder: (context, state) => const S23TentangAplikasiScreen(),
       ),
-      GoRoute(
+      _rootRoute(
         path: '/data-inspector',
         builder: (context, state) => const DataInspectorScreen(),
       ),

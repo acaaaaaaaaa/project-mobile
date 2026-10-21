@@ -35,7 +35,7 @@ final monitorControllerProvider = Provider<MonitorController>((ref) {
 });
 
 /// Stream snapshot telemetri sensor live
-final monitorSnapshotProvider = StreamProvider<MonitorSnapshot>((ref) {
+final monitorSnapshotProvider = StreamProvider.autoDispose<MonitorSnapshot>((ref) {
   final controller = ref.watch(monitorControllerProvider);
   return controller.snapshotStream;
 });

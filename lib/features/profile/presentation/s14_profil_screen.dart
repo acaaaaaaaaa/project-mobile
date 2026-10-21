@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/avatar_circle.dart';
 import '../../auth/presentation/auth_controller.dart';
+import 'notification_controller.dart';
 import '../../stats/domain/stats_model.dart';
 import '../../stats/presentation/stats_controller.dart';
 
@@ -92,7 +93,7 @@ class S14ProfilScreen extends ConsumerWidget {
                         alignment: Alignment.center,
                         children: [
                           const Icon(Icons.notifications_none_rounded, color: AppColors.navy, size: 22),
-                          Positioned(
+                          if (ref.watch(hasUnreadNotificationsProvider)) Positioned(
                             top: 9,
                             right: 9,
                             child: Container(
@@ -287,7 +288,7 @@ class S14ProfilScreen extends ConsumerWidget {
 
               const SizedBox(height: 14),
 
-              // Menu List Card: Sensitivitas Sensor, Pengaturan Alarm, Integrasi Kalender, Tentang Aplikasi, Keluar Akun, Hapus Akun
+              // Pengaturan profil dan akun
               AppCard(
                 padding: EdgeInsets.zero,
                 child: Column(
@@ -302,12 +303,6 @@ class S14ProfilScreen extends ConsumerWidget {
                       icon: Icons.notifications_active_outlined,
                       title: 'Pengaturan Alarm',
                       onTap: () => context.push('/alarm-settings'),
-                    ),
-                    const Divider(height: 1, color: Color(0xFFE2EDF9)),
-                    _buildMenuTile(
-                      icon: Icons.calendar_today_outlined,
-                      title: 'Integrasi Kalender',
-                      onTap: () => context.push('/calendar-integration'),
                     ),
                     const Divider(height: 1, color: Color(0xFFE2EDF9)),
                     _buildMenuTile(

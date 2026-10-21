@@ -15,11 +15,12 @@ final authStateProvider = StreamProvider<User?>((ref) {
 /// Provider tunggal data pengguna saat ini (uid, displayName, photoUrl, settings)
 /// Di-stream langsung dari Realtime Database node users/{uid}.
 /// Bagian aplikasi manapun TIDAK BOLEH menyimpan salinan nama sendiri secara independen.
-final currentUserProvider = StreamProvider<AppUser?>((ref) {
-  final authState = ref.watch(authStateProvider);
-  final user = authState.value;
+final currentUserProvider = StreamProvider<AppUser?>((ref) async* {
+  final repo = ref.watch(authRepositoryProvider);
+  final user = await ref.watch(authStateProvider.future);
   if (user == null) {
-    return Stream.value(null);
+    yield null;
+    return;
   }
-  return ref.watch(authRepositoryProvider).watchUser(user.uid);
+  yield* repo.watchUser(user.uid);
 });

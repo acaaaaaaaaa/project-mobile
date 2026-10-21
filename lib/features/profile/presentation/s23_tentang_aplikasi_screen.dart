@@ -147,7 +147,7 @@ class S23TentangAplikasiScreen extends StatelessWidget {
                                     style: AppTheme.bodySmall.copyWith(color: AppColors.navy),
                                     children: const [
                                       TextSpan(text: 'Dosen Pengampu: ', style: TextStyle(fontWeight: FontWeight.w800)),
-                                      TextSpan(text: "Siti Mas'ula, M.Pd"),
+                                      TextSpan(text: "Dr. Siti Mas'ula, M.Pd."),
                                     ],
                                   ),
                                 ),

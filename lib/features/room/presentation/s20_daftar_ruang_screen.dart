@@ -8,6 +8,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/avatar_circle.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../domain/room_models.dart';
+import '../../profile/presentation/notification_controller.dart';
 import 'room_controller.dart';
 import 's05_sheet_buat_ruang.dart';
 
@@ -113,7 +114,7 @@ class _S20DaftarRuangScreenState extends ConsumerState<S20DaftarRuangScreen> {
                         alignment: Alignment.center,
                         children: [
                           const Icon(Icons.notifications_none_rounded, color: AppColors.navy, size: 22),
-                          Positioned(
+                          if (ref.watch(hasUnreadNotificationsProvider)) Positioned(
                             top: 9,
                             right: 10,
                             child: Container(
@@ -920,7 +921,7 @@ class _S20DaftarRuangScreenState extends ConsumerState<S20DaftarRuangScreen> {
 
   void _navigateToRoom(UserRoomIndex room) {
     if (room.status == 'selesai') {
-      context.push('/history-detail/${room.roomId}');
+      context.push('/session-summary/${room.roomId}?readOnly=true');
     } else if (room.status == 'berjalan') {
       context.push('/active-session/${room.roomId}');
     } else {

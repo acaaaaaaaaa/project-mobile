@@ -96,16 +96,12 @@ class SessionEngineNotifier extends StateNotifier<SessionState> {
   StreamSubscription? _eventsSub;
   bool _hasInitialEventsLoaded = false;
   final Set<String> _processedEventKeys = {};
-  int _joinTimeMs = 0;
 
   SessionEngineNotifier({required this.roomId, required this.ref})
-      : super(const SessionState()) {
-    _joinTimeMs = DateTime.now().millisecondsSinceEpoch;
-  }
+      : super(const SessionState());
 
   void startSessionTracking(int endAtMs) {
-    _countdownTimer?.cancel();
-    _heartbeatTimer?.cancel();
+    stopSessionTracking();
 
     final serverTime = ref.read(serverTimeServiceProvider);
     final repo = ref.read(sessionRepositoryProvider);
@@ -133,7 +129,9 @@ class SessionEngineNotifier extends StateNotifier<SessionState> {
     }
 
     tick();
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
+    if (!state.isFinished) {
+      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
+    }
 
     // 4. Dengarkan roomEvents untuk alarm dispatch
     _listenToRoomEvents();
@@ -215,6 +213,12 @@ class SessionEngineNotifier extends StateNotifier<SessionState> {
 
   void clearLatestLeave() {
     state = state.copyWith(latestLeaveEvent: null, latestLeaverName: null);
+  }
+
+  void stopSessionTracking() {
+    _countdownTimer?.cancel();
+    _heartbeatTimer?.cancel();
+    _eventsSub?.cancel();
   }
 
   @override

@@ -7,6 +7,7 @@ import '../../../core/utils/bottom_sheet_helper.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/avatar_circle.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../profile/presentation/notification_controller.dart';
 import '../../room/domain/room_models.dart';
 import '../../stats/domain/stats_model.dart';
 import '../../stats/presentation/stats_controller.dart';
@@ -84,7 +85,7 @@ class S04BerandaScreen extends ConsumerWidget {
                             size: 24,
                           ),
                           // Indikator unread red dot
-                          Positioned(
+                          if (ref.watch(hasUnreadNotificationsProvider)) Positioned(
                             top: 10,
                             right: 11,
                             child: Container(
@@ -107,16 +108,16 @@ class S04BerandaScreen extends ConsumerWidget {
               // 2. Profil Pengguna: Avatar asli, Sapaan "Halo, [nama pengguna]" dan Teks singkat
               Builder(
                 builder: (context) {
-                  final user = userAsync.valueOrNull;
+                  final user = userAsync.isLoading ? null : userAsync.valueOrNull;
                   final rawName = user?.displayName ?? '';
                   final firstName = rawName.trim().isNotEmpty
                       ? rawName.trim().split(' ').first
-                      : 'Farhan';
+                      : '';
 
                   return Row(
                     children: [
                       AvatarCircle(
-                        name: rawName.isNotEmpty ? rawName : 'Farhan',
+                        name: rawName,
                         photoUrl: user?.photoUrl,
                         size: 48,
                         onTap: () => context.go('/profile'),
@@ -130,7 +131,9 @@ class S04BerandaScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Halo, $firstName',
+                                firstName.isEmpty
+                                    ? (userAsync.hasError ? 'Profil belum tersedia' : 'Memuat profil...')
+                                    : 'Halo, $firstName',
                                 style: AppTheme.headlineSmall.copyWith(
                                   fontWeight: FontWeight.w900,
                                   color: AppColors.navy,
@@ -643,7 +646,7 @@ class S04BerandaScreen extends ConsumerWidget {
                 borderRadius: 18,
                 onTap: () {
                   if (room.status == 'selesai') {
-                    context.push('/history-detail/${room.roomId}');
+                    context.push('/session-summary/${room.roomId}?readOnly=true');
                   } else if (room.status == 'berjalan') {
                     context.push('/active-session/${room.roomId}');
                   } else {

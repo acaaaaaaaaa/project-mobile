@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-class AvatarCircle extends StatelessWidget {
+class AvatarCircle extends StatefulWidget {
   final String name;
   final String? photoUrl;
   final double size;
@@ -19,10 +19,56 @@ class AvatarCircle extends StatelessWidget {
     this.onTap,
   });
 
+  @override
+  State<AvatarCircle> createState() => _AvatarCircleState();
+}
+
+class _AvatarCircleState extends State<AvatarCircle> {
+  ImageProvider? _photo;
+
+  String get name => widget.name;
+  String? get photoUrl => widget.photoUrl;
+  double get size => widget.size;
+  Color? get backgroundColor => widget.backgroundColor;
+  VoidCallback? get onTap => widget.onTap;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolvePhoto();
+  }
+
+  @override
+  void didUpdateWidget(covariant AvatarCircle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.photoUrl != photoUrl) _resolvePhoto();
+  }
+
+  void _resolvePhoto() {
+    final url = photoUrl?.trim() ?? '';
+    _photo = null;
+    if (url.isEmpty) return;
+    try {
+      if (url.startsWith('assets/')) {
+        _photo = AssetImage(url);
+      } else if (url.startsWith('data:image/') || url.startsWith('base64,')) {
+        // Keep the decoded bytes/provider stable across telemetry/heartbeat builds.
+        _photo = MemoryImage(base64Decode(url.split(',').last));
+      } else if (url.startsWith('http://') || url.startsWith('https://')) {
+        _photo = NetworkImage(url);
+      } else {
+        final file = File(url);
+        if (file.existsSync()) _photo = FileImage(file);
+      }
+    } catch (_) {
+      _photo = null;
+    }
+  }
+
   String get _initials {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return 'K';
-    final parts = trimmed.split(' ');
+    final parts = trimmed.split(RegExp(r'\s+'));
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
@@ -44,50 +90,6 @@ class AvatarCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = photoUrl != null && photoUrl!.trim().isNotEmpty;
-
-    Widget buildImage() {
-      final url = photoUrl!.trim();
-      if (url.startsWith('assets/')) {
-        return Image.asset(
-          url,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _buildInitials(),
-        );
-      }
-      if (url.startsWith('data:image/') || url.startsWith('base64,')) {
-        try {
-          return Image.memory(
-            base64Decode(url.split(',').last),
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _buildInitials(),
-          );
-        } catch (_) {
-          return _buildInitials();
-        }
-      }
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        return Image.network(
-          url,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _buildInitials(),
-        );
-      }
-      // Path lokal file dari image_picker
-      try {
-        final file = File(url);
-        if (file.existsSync()) {
-          return Image.file(
-            file,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _buildInitials(),
-          );
-        }
-      } catch (_) {}
-
-      return _buildInitials();
-    }
-
     Widget avatar = Container(
       width: size,
       height: size,
@@ -104,7 +106,14 @@ class AvatarCircle extends StatelessWidget {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: hasPhoto ? buildImage() : _buildInitials(),
+      child: _photo == null
+          ? _buildInitials()
+          : Image(
+              image: _photo!,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (context, error, stack) => _buildInitials(),
+            ),
     );
 
     if (onTap != null) {

@@ -92,8 +92,9 @@ class TiltEstimator {
 
       // 4. Filter Komplementer: roll = beta * rollGyro + (1 - beta) * rollAccel
       final beta = config.compBeta;
-      _currentRoll = beta * rollGyro + (1.0 - beta) * rollAccel;
-      _currentPitch = beta * pitchGyro + (1.0 - beta) * pitchAccel;
+      // Blend the shortest angular difference, including face-down phones at +/-180.
+      _currentRoll = _wrap180(rollGyro + (1.0 - beta) * _wrap180(rollAccel - rollGyro));
+      _currentPitch = _wrap180(pitchGyro + (1.0 - beta) * _wrap180(pitchAccel - pitchGyro));
     }
 
     // 5. Hitung deltaTilt dengan penanganan wrap +-180 derajat (mengabaikan yaw)

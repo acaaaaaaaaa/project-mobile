@@ -3,6 +3,9 @@ import 'package:firebase_core/firebase_core.dart';
 class KerkomFirebaseConfig {
   KerkomFirebaseConfig._();
 
+  /// Optional override; Android otherwise reads the web OAuth client from google-services.json.
+  static const googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
   static const FirebaseOptions options = FirebaseOptions(
     apiKey: 'AIzaSyBxC0rck6OtS9zW6k4YZbuzu5c_lovATUI',
     appId: '1:834453228503:android:0410d8cc2ef8bdbfa91992',

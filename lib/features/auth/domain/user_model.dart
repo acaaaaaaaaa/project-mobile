@@ -3,18 +3,12 @@ class UserSettings {
   final String alarmMode;
   final String monitorPermission;
   final double volume;
-  final bool googleCalendarConnected;
-  final bool outlookCalendarConnected;
-  final bool autoSyncCalendar;
 
   const UserSettings({
     this.tiltToleranceDeg = 15.0,
     this.alarmMode = 'both',
     this.monitorPermission = 'whileSession',
     this.volume = 0.8,
-    this.googleCalendarConnected = true,
-    this.outlookCalendarConnected = false,
-    this.autoSyncCalendar = true,
   });
 
   factory UserSettings.fromMap(Map<dynamic, dynamic>? map) {
@@ -24,13 +18,6 @@ class UserSettings {
       alarmMode: map['alarmMode']?.toString() ?? 'both',
       monitorPermission: map['monitorPermission']?.toString() ?? 'whileSession',
       volume: (map['volume'] as num?)?.toDouble() ?? 0.8,
-      googleCalendarConnected: map['googleCalendarConnected'] == null
-          ? true
-          : (map['googleCalendarConnected'] as bool? ?? true),
-      outlookCalendarConnected: map['outlookCalendarConnected'] as bool? ?? false,
-      autoSyncCalendar: map['autoSyncCalendar'] == null
-          ? true
-          : (map['autoSyncCalendar'] as bool? ?? true),
     );
   }
 
@@ -40,9 +27,6 @@ class UserSettings {
       'alarmMode': alarmMode,
       'monitorPermission': monitorPermission,
       'volume': volume,
-      'googleCalendarConnected': googleCalendarConnected,
-      'outlookCalendarConnected': outlookCalendarConnected,
-      'autoSyncCalendar': autoSyncCalendar,
     };
   }
 }

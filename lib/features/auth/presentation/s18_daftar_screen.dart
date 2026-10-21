@@ -134,9 +134,13 @@ class _S18DaftarScreenState extends ConsumerState<S18DaftarScreen> {
 
     try {
       final authRepo = ref.read(authRepositoryProvider);
-      await authRepo.signInWithGoogle();
+      final result = await authRepo.signInWithGoogle();
 
       if (!mounted) return;
+      if (result.isNewUser) {
+        context.go('/complete-profile');
+        return;
+      }
       final pendingCode = ref.read(pendingInviteCodeProvider);
       if (pendingCode != null && pendingCode.isNotEmpty) {
         try {
@@ -341,7 +345,7 @@ class _S18DaftarScreenState extends ConsumerState<S18DaftarScreen> {
                           textInputAction: TextInputAction.next,
                           style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w600),
                           decoration: _buildInputDecoration(
-                            labelText: 'Kata Sandi',
+                            labelText: 'Buat Kata Sandi',
                             hintText: 'Minimal 8 karakter',
                             prefixIcon: Icons.lock_outline_rounded,
                             suffixIcon: IconButton(

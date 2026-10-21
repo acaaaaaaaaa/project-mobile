@@ -329,9 +329,9 @@ class RoomRepository {
           }
         });
         list.sort((a, b) {
-          if (a.isHost) return -1;
-          if (b.isHost) return 1;
-          return a.joinedAt.compareTo(b.joinedAt);
+          if (a.isHost != b.isHost) return a.isHost ? -1 : 1;
+          final joined = a.joinedAt.compareTo(b.joinedAt);
+          return joined != 0 ? joined : a.uid.compareTo(b.uid);
         });
         yield list;
       }
@@ -352,9 +352,9 @@ class RoomRepository {
         });
         // Urutkan host pertama, kemudian berdasarkan waktu join
         list.sort((a, b) {
-          if (a.isHost) return -1;
-          if (b.isHost) return 1;
-          return a.joinedAt.compareTo(b.joinedAt);
+          if (a.isHost != b.isHost) return a.isHost ? -1 : 1;
+          final joined = a.joinedAt.compareTo(b.joinedAt);
+          return joined != 0 ? joined : a.uid.compareTo(b.uid);
         });
         return list;
       }

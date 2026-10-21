@@ -108,7 +108,9 @@ class S07LobiScreen extends ConsumerWidget {
 
     ref.listen(activeRoomProvider(roomId), (prev, next) {
       final room = next.value;
-      if (room != null && room.status == 'kalibrasi') {
+      if (room?.hasEndedAt(DateTime.now().millisecondsSinceEpoch) == true) {
+        context.replace('/session-summary/$roomId?readOnly=true');
+      } else if (room != null && room.status == 'kalibrasi') {
         context.go('/calibration/$roomId');
       }
     });
@@ -366,6 +368,7 @@ class S07LobiScreen extends ConsumerWidget {
                             final isMe = member.uid == currentUid;
 
                             return AppCard(
+                              key: ValueKey(member.uid),
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               child: Row(
                                 children: [

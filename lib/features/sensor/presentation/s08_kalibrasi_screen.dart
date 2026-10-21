@@ -116,19 +116,27 @@ class _S08KalibrasiScreenState extends ConsumerState<S08KalibrasiScreen> {
     final room = ref.read(roomProvider(widget.roomId)).value;
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     if (room == null || currentUid == null) return;
+    if (room.hasEndedAt(ref.read(serverTimeServiceProvider).nowServerMs)) {
+      if (mounted) context.replace('/session-summary/${widget.roomId}?readOnly=true');
+      return;
+    }
 
     final isHost = room.hostUid == currentUid;
     final sessionRepo = ref.read(sessionRepositoryProvider);
     final serverTime = ref.read(serverTimeServiceProvider);
 
-    if (isHost) {
+    if (isHost && room.status != 'berjalan') {
       // Host menyelesaikan kalibrasi -> sesi mulai berjalan untuk semua anggota
-      await sessionRepo.startSessionByHost(
+      final started = await sessionRepo.startSessionByHost(
         roomId: widget.roomId,
         durationMinutes: room.durationMinutes,
         estimatedServerTimeMs: serverTime.nowServerMs,
       );
       if (mounted) {
+        if (!started) {
+          context.replace('/lobby/${widget.roomId}');
+          return;
+        }
         context.go('/active-session/${widget.roomId}');
       }
     } else {
@@ -166,7 +174,12 @@ class _S08KalibrasiScreenState extends ConsumerState<S08KalibrasiScreen> {
 
     ref.listen(roomProvider(widget.roomId), (prev, next) {
       final room = next.value;
-      if (room != null && room.status == 'berjalan' && _calibrationFinished) {
+      if (room?.hasEndedAt(ref.read(serverTimeServiceProvider).nowServerMs) == true) {
+        _countdownTimer?.cancel();
+        _safetyTimeoutTimer?.cancel();
+        ref.read(monitorControllerProvider).stop();
+        context.replace('/session-summary/${widget.roomId}?readOnly=true');
+      } else if (room != null && room.status == 'berjalan' && _calibrationFinished) {
         if (mounted) {
           context.go('/active-session/${widget.roomId}');
         }

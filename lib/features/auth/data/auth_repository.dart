@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../../../core/config/firebase_config.dart';
 import '../domain/user_model.dart';
 
 class AuthRepository {
@@ -20,7 +22,11 @@ class AuthRepository {
               app: FirebaseDatabase.instance.app,
               databaseURL: 'https://kerkom-project-default-rtdb.asia-southeast1.firebasedatabase.app/',
             ),
-        _googleSignIn = googleSignIn ?? GoogleSignIn();
+        _googleSignIn = googleSignIn ?? GoogleSignIn(
+          scopes: const ['email'],
+          serverClientId: KerkomFirebaseConfig.googleWebClientId.isEmpty
+              ? null : KerkomFirebaseConfig.googleWebClientId,
+        );
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   User? get currentFirebaseUser => _auth.currentUser;
@@ -118,6 +124,10 @@ class AuthRepository {
       }
 
       final googleAuth = await googleAccount.authentication;
+      if (googleAuth.idToken == null || googleAuth.idToken!.isEmpty) {
+        debugPrint('Google Sign-In: missing ID token. Configure the web OAuth client and Android signing SHA in Firebase.');
+        throw 'Login Google belum tersedia. Hubungi pengelola aplikasi.';
+      }
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -153,7 +163,17 @@ class AuthRepository {
         return (user: appUser, isNewUser: true);
       }
     } on FirebaseAuthException catch (e) {
+      if (e.code == 'operation-not-allowed') {
+        throw 'Login Google belum diaktifkan. Hubungi pengelola aplikasi.';
+      }
       throw _mapFirebaseAuthError(e);
+    } on PlatformException catch (e) {
+      debugPrint('Google Sign-In platform error: ${e.code}: ${e.message}');
+      if (e.code == 'network_error') {
+        throw 'Koneksi internet bermasalah. Periksa jaringan Anda.';
+      }
+      if (e.code == 'sign_in_canceled') throw 'Login dengan Google dibatalkan';
+      throw 'Login Google belum tersedia. Hubungi pengelola aplikasi.';
     } catch (e) {
       if (e is String) rethrow;
       debugPrint('Google Sign In error: $e');
@@ -187,50 +207,6 @@ class AuthRepository {
     }
     if (updates.isNotEmpty) {
       await _db.ref('users/${user.uid}').update(updates);
-    }
-  }
-
-  /// Meminta izin resmi akses Google Calendar via OAuth Consent
-  Future<bool> requestGoogleCalendarConsent() async {
-    try {
-      final googleSignIn = GoogleSignIn(
-        scopes: [
-          'email',
-          'https://www.googleapis.com/auth/calendar.events',
-        ],
-      );
-      final account = await googleSignIn.signIn();
-      if (account == null) {
-        return false;
-      }
-      await updateCalendarSettings(googleCalendarConnected: true);
-      return true;
-    } catch (e) {
-      debugPrint('Error requestGoogleCalendarConsent: $e');
-      rethrow;
-    }
-  }
-
-  /// Perbarui preferensi sinkronisasi kalender (S21)
-  Future<void> updateCalendarSettings({
-    bool? googleCalendarConnected,
-    bool? outlookCalendarConnected,
-    bool? autoSyncCalendar,
-  }) async {
-    final user = _auth.currentUser;
-    if (user == null) throw 'Pengguna belum login';
-    final updates = <String, dynamic>{};
-    if (googleCalendarConnected != null) {
-      updates['googleCalendarConnected'] = googleCalendarConnected;
-    }
-    if (outlookCalendarConnected != null) {
-      updates['outlookCalendarConnected'] = outlookCalendarConnected;
-    }
-    if (autoSyncCalendar != null) {
-      updates['autoSyncCalendar'] = autoSyncCalendar;
-    }
-    if (updates.isNotEmpty) {
-      await _db.ref('users/${user.uid}/settings').update(updates);
     }
   }
 

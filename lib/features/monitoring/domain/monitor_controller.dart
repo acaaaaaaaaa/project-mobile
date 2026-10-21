@@ -98,15 +98,31 @@ class MonitorController {
     _violationDetector.updateConfig(newConfig);
   }
 
-  void start() {
+  void start({bool preserveCalibration = false}) {
+    final previousCalibration = preserveCalibration ? _calibration : null;
     stop();
+    _calibration = null;
     _state = MonitorState.idle;
     _stateController.add(_state);
     sampler.start();
     _sampleSub = sampler.sampleStream.listen(processSample);
+    if (previousCalibration != null) useCalibration(previousCalibration);
+  }
+
+  /// Transfer a measured baseline without reusing old detector/filter windows.
+  void useCalibration(CalibrationData calibration) {
+    _calibration = calibration;
+    _tiltEstimator.setBaseline(calibration.baselineRoll, calibration.baselinePitch);
+    _featureExtractor.reset();
+    _violationDetector.reset();
+    _lastZScore = 0;
+    _lastGyroRms = 0;
+    _state = MonitorState.armed;
+    _stateController.add(_state);
   }
 
   void startCalibration() {
+    _calibration = null;
     _calibrator.reset();
     _tiltEstimator.reset();
     _featureExtractor.reset();

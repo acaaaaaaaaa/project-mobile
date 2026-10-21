@@ -14,21 +14,35 @@ class SessionRepository {
             );
 
   /// Host memulai sesi fokus (status = 'berjalan', startAt = ServerValue.timestamp, endAt = startAt + duration)
-  Future<void> startSessionByHost({
+  Future<bool> startSessionByHost({
     required String roomId,
     required int durationMinutes,
     required int estimatedServerTimeMs,
   }) async {
     final endAtMs = estimatedServerTimeMs + (durationMinutes * 60 * 1000);
-    await _db.ref('rooms/$roomId').update({
-      'status': 'berjalan',
-      'startAt': ServerValue.timestamp,
-      'endAt': endAtMs,
+    final result = await _db.ref('rooms/$roomId').runTransaction((value) {
+      if (value is! Map || value['status'] == 'selesai' || value['status'] == 'berjalan') {
+        return Transaction.abort();
+      }
+      return Transaction.success({
+        ...value, 'status': 'berjalan',
+        'startAt': estimatedServerTimeMs, 'endAt': endAtMs,
+      });
     });
+    if (result.committed) {
+      final members = await _db.ref('roomMembers/$roomId').get();
+      if (members.value is Map) {
+        await _db.ref().update({
+          for (final uid in (members.value as Map).keys)
+            'userRooms/$uid/$roomId/status': 'berjalan',
+        });
+      }
+    }
+    return result.committed;
   }
 
   /// Host mengakhiri sesi untuk seluruh anggota (status = 'selesai')
-  Future<void> endSessionForEveryone(String roomId) async {
+  Future<void> endSessionForEveryone(String roomId, {String endedHow = 'host'}) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     final roomSnap = await _db.ref('rooms/$roomId').get();
     String? code;
@@ -39,6 +53,7 @@ class SessionRepository {
 
     if (roomSnap.exists && roomSnap.value is Map) {
       final rMap = roomSnap.value as Map;
+      if (rMap['status'] == 'selesai') return;
       code = rMap['code']?.toString();
       name = rMap['name']?.toString() ?? 'Ruang Belajar';
       durationMin = (rMap['durationMinutes'] as num?)?.toInt() ?? 45;
@@ -48,6 +63,7 @@ class SessionRepository {
 
     final updates = <String, dynamic>{
       'rooms/$roomId/status': 'selesai',
+      'rooms/$roomId/endAt': now,
       if (code != null) 'roomCodes/$code/active': false,
     };
 
@@ -66,7 +82,7 @@ class SessionRepository {
             'completedAt': now,
             'durationDoneMin': ((now - startAt) / 60000).ceil().clamp(1, durationMin),
             'violationCount': 0,
-            'endedHow': 'host',
+            'endedHow': endedHow,
             'isCreatedByMe': mUid == hostUid,
             'status': 'Selesai',
             'memberCount': membersMap.length,
@@ -235,48 +251,7 @@ class SessionRepository {
 
   /// Stream seluruh riwayat sesi pengguna (userSessions/{uid}) terurut terbaru lebih dulu
   Stream<List<UserSessionRecord>> watchUserSessions(String uid) async* {
-    // Sinkronisasi otomatis: pastikan ruang yang belum selesai dibersihkan dari userSessions
-    try {
-      final userRoomsSnap = await _db.ref('userRooms/$uid').get().timeout(const Duration(seconds: 3));
-      if (userRoomsSnap.exists && userRoomsSnap.value is Map) {
-        final uRoomsMap = userRoomsSnap.value as Map;
-        for (final entry in uRoomsMap.entries) {
-          final rId = entry.key.toString();
-          final rVal = entry.value;
-          if (rVal is Map) {
-            final status = rVal['status']?.toString().toLowerCase();
-            final name = rVal['name']?.toString() ?? '';
-            if (status != 'selesai') {
-              // Jika ruang belum selesai (masih lobi/berjalan), pastikan TIDAK ADA di userSessions
-              _db.ref('userSessions/$uid/$rId').remove();
-            } else if (status == 'selesai' || name.toLowerCase().contains('tugas akhir')) {
-              final code = rVal['code']?.toString() ?? '';
-              final scheduledStart = (rVal['scheduledStart'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch;
-              final durationMin = (rVal['durationMin'] as num?)?.toInt() ?? 45;
-              final role = rVal['role']?.toString() ?? 'member';
-              final note = rVal['note']?.toString();
-
-              _db.ref('userSessions/$uid/$rId').update({
-                'roomId': rId,
-                'roomName': name,
-                'roomCode': code,
-                'startAt': scheduledStart,
-                'completedAt': scheduledStart + (durationMin * 60 * 1000),
-                'durationDoneMin': durationMin,
-                'violationCount': 0,
-                'endedHow': 'host',
-                'isCreatedByMe': role == 'host',
-                'status': 'Selesai',
-                'memberCount': 1,
-                'note': ?note,
-                'meetingLink': 'https://kerkom.app/j/$code',
-              });
-            }
-          }
-        }
-      }
-    } catch (_) {}
-
+    // Reading history must not rewrite completedAt or delete a member's exit record.
     yield* _db.ref('userSessions/$uid').onValue.map((event) {
       if (!event.snapshot.exists || event.snapshot.value is! Map) {
         return <UserSessionRecord>[];

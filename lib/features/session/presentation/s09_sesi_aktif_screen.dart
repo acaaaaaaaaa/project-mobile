@@ -33,6 +33,10 @@ class S09SesiAktifScreen extends ConsumerStatefulWidget {
 
 class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with WidgetsBindingObserver {
   StreamSubscription<ViolationEvent>? _sensorViolationSub;
+  StreamSubscription<MonitorState>? _sensorStateSub;
+  bool _sessionInitialized = false;
+  bool _foregroundServiceReady = false;
+  bool _isInBackground = false;
   double _exitSliderValue = 0.0;
   bool _isNavigatingAway = false;
   bool _wasDeviceLifted = false;
@@ -50,7 +54,16 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
 
   void _initSession() {
     final room = ref.read(roomProvider(widget.roomId)).value;
-    final endAt = room?.endAt ?? (DateTime.now().millisecondsSinceEpoch + 25 * 60 * 1000);
+    if (room == null || room.hasEndedAt(ref.read(serverTimeServiceProvider).nowServerMs)) {
+      context.replace('/session-summary/${widget.roomId}?readOnly=true');
+      return;
+    }
+    if (room.status != 'berjalan' || room.endAt == null) {
+      context.replace('/lobby/${widget.roomId}');
+      return;
+    }
+    _sessionInitialized = true;
+    final endAt = room.endAt!;
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     final currentUser = ref.read(currentUserProvider).value;
     final monitorPerm = currentUser?.settings.monitorPermission ?? 'whileSession';
@@ -62,13 +75,12 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
     final sampler = ref.read(samplerProvider);
     final realSource = ref.read(realSensorSourceProvider);
     sampler.setSource(realSource);
-    sampler.start();
 
     final monitorController = ref.read(monitorControllerProvider);
     final tiltTol = currentUser?.settings.tiltToleranceDeg ?? 15.0;
     monitorController.updateConfig(MonitorConfig(tiltToleranceDeg: tiltTol));
-    monitorController.start();
-    monitorController.forceCalibrationSuccess();
+    monitorController.start(preserveCalibration: true);
+    if (monitorController.calibration == null) monitorController.startCalibration();
 
     // 3. Sinkronisasi foto profil pengguna ke roomMembers
     if (currentUid != null && currentUser?.photoUrl.isNotEmpty == true) {
@@ -85,23 +97,42 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
         _handleLocalViolation(deltaTilt: event.deltaTilt, zScore: event.zScore);
       }
     });
+    _sensorStateSub = monitorController.stateStream.listen((state) {
+      if (state == MonitorState.armed && !_isNavigatingAway) {
+        _handlePhoneRestored();
+      }
+    });
 
     // 4. Mulai Foreground Service (Android jika diizinkan) atau Wakelock (iOS / fallback)
     if (AppPlatform.isAndroid && monitorPerm != 'denied') {
       ForegroundSensorServiceManager.start(
         roomId: widget.roomId,
         uid: currentUid ?? '',
-        roomName: room?.name ?? 'Sesi Fokus',
+        roomName: room.name,
         endAtMs: endAt,
         tiltToleranceDeg: tiltTol,
         alarmMode: currentUser?.settings.alarmMode ?? 'both',
-      );
+        calibration: monitorController.calibration,
+      ).then((started) {
+        if (!mounted || _isNavigatingAway) {
+          if (started) ForegroundSensorServiceManager.stop();
+          return;
+        }
+        _foregroundServiceReady = started;
+        if (started && _isInBackground) {
+          ForegroundSensorServiceManager.setBackgroundMonitoring(true, calibration: monitorController.calibration);
+          monitorController.stop();
+        }
+        if (!started) WakelockPlus.enable();
+      });
     } else {
       WakelockPlus.enable();
     }
   }
 
   void _handleLocalViolation({required double deltaTilt, required double zScore}) {
+    if (_wasDeviceLifted || _isNavigatingAway || !mounted) return;
+    _wasDeviceLifted = true;
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     final currentUser = ref.read(currentUserProvider).value;
     final alarmMode = currentUser?.settings.alarmMode ?? 'both';
@@ -120,12 +151,6 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
           );
     }
 
-    // 3. Juga catat ke Offline Event Queue untuk jaminan offline recovery
-    ref.read(sessionEngineProvider(widget.roomId).notifier).recordViolation(
-          deltaTiltDeg: deltaTilt,
-          zScore: zScore,
-        );
-
     if (mounted) {
       setState(() {
         _localAlertBanner = 'Peringatan: Kamu mengangkat HP! (Kemiringan ${deltaTilt.toStringAsFixed(1)}°)';
@@ -134,8 +159,9 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
   }
 
   void _handlePhoneRestored() {
+    _wasDeviceLifted = false;
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
-    ref.read(alarmServiceProvider).stop();
+    if (_remoteViolatorBanner == null) ref.read(alarmServiceProvider).stop();
 
     if (currentUid != null) {
       ref.read(sessionRepositoryProvider).clearRoomViolation(
@@ -186,7 +212,20 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (!_sessionInitialized || _isNavigatingAway) return;
+    if (state == AppLifecycleState.resumed) {
+      _isInBackground = false;
+      if (_foregroundServiceReady) {
+        ForegroundSensorServiceManager.setBackgroundMonitoring(false);
+        ref.read(monitorControllerProvider).start(preserveCalibration: true);
+      }
+    } else if (state == AppLifecycleState.paused) {
+      _isInBackground = true;
+      if (_foregroundServiceReady) {
+        final controller = ref.read(monitorControllerProvider);
+        ForegroundSensorServiceManager.setBackgroundMonitoring(true, calibration: controller.calibration);
+        controller.stop();
+      }
       if (!_isNavigatingAway) {
         final isScreenOn = ref.read(screenStateServiceProvider).isScreenOn;
         if (isScreenOn) {
@@ -200,8 +239,10 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _sensorViolationSub?.cancel();
+    _sensorStateSub?.cancel();
     ref.read(alarmServiceProvider).stop();
-    ref.read(samplerProvider).stop();
+    ref.read(monitorControllerProvider).stop();
+    ref.read(sessionEngineProvider(widget.roomId).notifier).stopSessionTracking();
     if (AppPlatform.isAndroid) {
       ForegroundSensorServiceManager.stop();
     }
@@ -306,41 +347,20 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
   Future<void> _onSessionFinished(String endedHow) async {
     if (_isNavigatingAway) return;
     _isNavigatingAway = true;
+    final repo = ref.read(sessionRepositoryProvider);
+    ref.read(alarmServiceProvider).stop();
+    ref.read(monitorControllerProvider).stop();
+    ref.read(sessionEngineProvider(widget.roomId).notifier).stopSessionTracking();
+
+    if (endedHow == 'timer') {
+      // Persist completion for members whose screens are off as well.
+      await repo.endSessionForEveryone(widget.roomId, endedHow: 'timer');
+    }
 
     if (AppPlatform.isAndroid) {
       await ForegroundSensorServiceManager.stop();
     }
     await WakelockPlus.disable();
-
-    final currentUid = FirebaseAuth.instance.currentUser?.uid;
-    final room = ref.read(roomProvider(widget.roomId)).value;
-    final repo = ref.read(sessionRepositoryProvider);
-    final members = ref.read(roomMembersProvider(widget.roomId)).value ?? [];
-
-    if (currentUid != null && room != null) {
-      final startAt = room.startAt ?? DateTime.now().millisecondsSinceEpoch;
-      final durationDone = room.durationMinutes;
-      final now = DateTime.now().millisecondsSinceEpoch;
-
-      await repo.saveUserSession(
-        uid: currentUid,
-        record: UserSessionRecord(
-          roomId: widget.roomId,
-          roomName: room.name,
-          startAt: startAt,
-          completedAt: now,
-          durationDoneMin: durationDone,
-          violationCount: 0,
-          endedHow: endedHow,
-          roomCode: room.code,
-          note: room.note,
-          meetingLink: room.meetingLink ?? 'https://kerkom.app/j/${room.code}',
-          memberCount: members.isNotEmpty ? members.length : 1,
-          isCreatedByMe: room.hostUid == currentUid,
-          status: 'Selesai',
-        ),
-      );
-    }
 
     if (mounted) {
       context.go('/session-summary/${widget.roomId}');
@@ -378,25 +398,12 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
     final magnitude = snapshot?.magnitude ?? 9.81;
     final isDeviceLifted = snapshot?.state == MonitorState.violation;
 
-      // Deteksi transisi status pengangkatan HP secara lokal
-      if (isDeviceLifted && !_wasDeviceLifted) {
-        _wasDeviceLifted = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _handleLocalViolation(deltaTilt: currentTilt, zScore: zScore);
-        });
-      } else if (!isDeviceLifted && _wasDeviceLifted) {
-        _wasDeviceLifted = false;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _handlePhoneRestored();
-        });
-      }
-
       // 3. Pantau status seluruh anggota di ruangan (Realtime Member State Watcher)
       ref.listen<AsyncValue<List<RoomMemberModel>>>(roomMembersProvider(widget.roomId), (prev, next) {
         final members = next.value ?? [];
         final remoteViolators = members.where((m) => m.uid != currentUid && m.state == 'terangkat').toList();
 
-        if (remoteViolators.isNotEmpty && !_isNavigatingAway) {
+        if (remoteViolators.isNotEmpty && _remoteViolatorBanner == null && !_isNavigatingAway) {
           // Ada anggota lain yang terdeteksi mengangkat HP!
           final alarmMode = currentUser?.settings.alarmMode ?? 'both';
           ref.read(alarmServiceProvider).triggerAlarm(alarmMode: alarmMode);
@@ -728,6 +735,7 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
                                       : member.photoUrl;
 
                                   return Container(
+                                    key: ValueKey(member.uid),
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
                                       color: AppColors.surfaceContainer,

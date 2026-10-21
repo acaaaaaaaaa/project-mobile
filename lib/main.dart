@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/config/firebase_config.dart';
 import 'core/router/app_router.dart';
+import 'core/router/app_back_button_dispatcher.dart';
 import 'core/services/deep_link_service.dart';
 import 'core/theme/app_theme.dart';
 
@@ -62,7 +63,10 @@ class _KerkomAppState extends ConsumerState<KerkomApp> {
       title: 'Kerkom',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      routerConfig: router,
+      routerDelegate: router.routerDelegate,
+      routeInformationParser: router.routeInformationParser,
+      routeInformationProvider: router.routeInformationProvider,
+      backButtonDispatcher: AppBackButtonDispatcher(router: router, navigatorKey: rootNavigatorKey),
     );
   }
 }

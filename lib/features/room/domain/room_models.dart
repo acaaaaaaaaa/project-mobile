@@ -15,6 +15,9 @@ class RoomModel {
 
   int? get startedAt => startAt;
 
+  bool hasEndedAt(int nowMs) => status == 'selesai' ||
+      (status == 'berjalan' && endAt != null && endAt! <= nowMs);
+
   const RoomModel({
     required this.id,
     required this.code,
