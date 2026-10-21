@@ -73,7 +73,30 @@ class _S02MasukScreenState extends ConsumerState<S02MasukScreen> {
     }
   }
 
-  Future<void> _handleGoogleLogin() async {
+  void _showGoogleDisabledNotice() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.white, size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Fitur login Google dinonaktifkan sementara. Silakan masuk menggunakan Email atau klik "Masuk Cepat (Akun Uji Coba)".',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0077B6),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  Future<void> _handleQuickDemoLogin() async {
     setState(() {
       _errorMessage = null;
       _isLoading = true;
@@ -81,31 +104,31 @@ class _S02MasukScreenState extends ConsumerState<S02MasukScreen> {
 
     try {
       final authRepo = ref.read(authRepositoryProvider);
-      final result = await authRepo.signInWithGoogle();
+      await authRepo.signInQuickDemo();
 
       if (!mounted) return;
-      if (result.isNewUser) {
-        context.go('/complete-profile');
-      } else {
-        final pendingCode = ref.read(pendingInviteCodeProvider);
-        if (pendingCode != null && pendingCode.isNotEmpty) {
-          try {
-            final room = await ref.read(roomRepositoryProvider).joinRoomByCode(pendingCode);
-            ref.read(pendingInviteCodeProvider.notifier).state = null;
-            if (mounted) {
-              context.go('/lobby/${room.id}');
-              return;
-            }
-          } catch (_) {}
-        }
-        if (!mounted) return;
-        context.go('/home');
+      final pendingCode = ref.read(pendingInviteCodeProvider);
+      if (pendingCode != null && pendingCode.isNotEmpty) {
+        try {
+          final room = await ref.read(roomRepositoryProvider).joinRoomByCode(pendingCode);
+          ref.read(pendingInviteCodeProvider.notifier).state = null;
+          if (mounted) {
+            context.go('/lobby/${room.id}');
+            return;
+          }
+        } catch (_) {}
       }
+      if (!mounted) return;
+      context.go('/home');
     } catch (e) {
       if (mounted) setState(() => _errorMessage = e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    _showGoogleDisabledNotice();
   }
 
   @override
@@ -381,6 +404,32 @@ class _S02MasukScreenState extends ConsumerState<S02MasukScreen> {
                                   ),
                           ),
                         ),
+                        const SizedBox(height: 12),
+
+                        // Tombol Uji Coba Cepat (Akun Demo untuk kemudahan testing)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton.icon(
+                            onPressed: _isLoading ? null : _handleQuickDemoLogin,
+                            icon: const Icon(Icons.rocket_launch_rounded, color: Color(0xFF0077B6), size: 18),
+                            label: Text(
+                              'Masuk Cepat (Akun Uji Coba)',
+                              style: AppTheme.labelLarge.copyWith(
+                                color: const Color(0xFF0077B6),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFF0077B6), width: 1.5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              backgroundColor: const Color(0xFF0077B6).withValues(alpha: 0.06),
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 24),
 
                         // Divider Alternatif
@@ -402,7 +451,7 @@ class _S02MasukScreenState extends ConsumerState<S02MasukScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // Opsi Login Alternatif: Google Icon Custom (Requirement 2)
+                        // Opsi Login Alternatif: Google Icon (Dinonaktifkan Sementara)
                         Center(
                           child: SizedBox(
                             width: double.infinity,
@@ -414,19 +463,19 @@ class _S02MasukScreenState extends ConsumerState<S02MasukScreen> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                backgroundColor: Colors.white,
+                                backgroundColor: const Color(0xFFF8FAFC),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  _buildGoogleIcon(),
+                                  Opacity(opacity: 0.45, child: _buildGoogleIcon()),
                                   const SizedBox(width: 12),
                                   Text(
-                                    'Masuk dengan Google',
+                                    'Masuk dengan Google (Nonaktif)',
                                     style: AppTheme.labelLarge.copyWith(
-                                      color: const Color(0xFF1E293B),
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF94A3B8),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],

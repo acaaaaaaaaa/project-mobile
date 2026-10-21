@@ -172,7 +172,15 @@ class S04BerandaScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 18.0),
                       child: GestureDetector(
                         onTap: () {
-                          if (roomId != null) context.push('/lobby/$roomId');
+                          if (roomId != null) {
+                            if (status == 'berjalan') {
+                              context.push('/active-session/$roomId');
+                            } else if (status == 'kalibrasi') {
+                              context.push('/calibration/$roomId');
+                            } else {
+                              context.push('/lobby/$roomId');
+                            }
+                          }
                         },
                         child: Container(
                           padding: const EdgeInsets.all(16),

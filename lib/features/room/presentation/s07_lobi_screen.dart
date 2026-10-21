@@ -112,6 +112,8 @@ class S07LobiScreen extends ConsumerWidget {
         context.replace('/session-summary/$roomId?readOnly=true');
       } else if (room != null && room.status == 'kalibrasi') {
         context.go('/calibration/$roomId');
+      } else if (room != null && room.status == 'berjalan') {
+        context.go('/active-session/$roomId');
       }
     });
 
@@ -196,8 +198,9 @@ class S07LobiScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 12),
                           PrimaryButton(
-                            text: 'Kalibrasi dan Masuk Sesi',
-                            onPressed: () => context.push('/calibration/$roomId'),
+                            text: 'Masuk ke Ruang Sesi',
+                            icon: const Icon(Icons.login_rounded, size: 20, color: AppColors.onPrimary),
+                            onPressed: () => context.go('/active-session/$roomId'),
                           ),
                         ],
                       ),
@@ -433,18 +436,15 @@ class S07LobiScreen extends ConsumerWidget {
                   ),
 
                   const SizedBox(height: 16),
-                  if (isHost && !isSessionRunning) ...[
+                  if (isHost && room.status == 'lobi') ...[
                     PrimaryButton(
                       text: 'Mulai Kalibrasi Bersama',
                       icon: const Icon(Icons.sensors_rounded, size: 20, color: AppColors.onPrimary),
                       onPressed: () async {
                         await ref.read(roomRepositoryProvider).startCalibration(roomId);
-                        if (context.mounted) {
-                          context.push('/calibration/$roomId');
-                        }
                       },
                     ),
-                  ] else if (!isHost && !isSessionRunning) ...[
+                  ] else if (!isHost && room.status == 'lobi') ...[
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
@@ -463,6 +463,29 @@ class S07LobiScreen extends ConsumerWidget {
                           Text(
                             'Menunggu host memulai...',
                             style: AppTheme.labelMedium.copyWith(color: AppColors.textMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (room.status == 'kalibrasi') ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainer,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Kalibrasi sesi sedang berlangsung...',
+                            style: AppTheme.labelMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700),
                           ),
                         ],
                       ),

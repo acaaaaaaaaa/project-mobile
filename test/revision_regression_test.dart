@@ -315,6 +315,64 @@ void main() {
   }
 
   testWidgets(
+    'Active running room that has not ended allows re-entry even if user has previous record',
+    (tester) async {
+      final now = DateTime.now();
+      final room = RoomModel(
+        id: 'one',
+        code: 'ABC123',
+        name: 'Belajar',
+        hostUid: 'roma',
+        durationMinutes: 25,
+        status: 'berjalan',
+        createdAt: now.subtract(const Duration(minutes: 5)).millisecondsSinceEpoch,
+        remainingSeconds: 20 * 60,
+        endAt: now.add(const Duration(minutes: 20)).millisecondsSinceEpoch,
+      );
+      var childMounted = false;
+      final router = GoRouter(
+        initialLocation: '/active-session/one',
+        routes: [
+          GoRoute(
+            path: '/active-session/:id',
+            builder: (_, _) => SessionAccessGate(
+              roomId: 'one',
+              child: Builder(
+                builder: (_) {
+                  childMounted = true;
+                  return const Text('Active Session Screen');
+                },
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/session-summary/:id',
+            builder: (_, _) => const Scaffold(body: Text('Ringkasan Sesi')),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            roomProvider('one').overrideWith((ref) => Stream.value(room)),
+            userSessionsProvider.overrideWith(
+              (ref) => Stream.value([record('one', now)]),
+            ),
+            serverTimeServiceProvider.overrideWith(
+              (ref) => ServerTimeService(),
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Active Session Screen'), findsOneWidget);
+      expect(childMounted, isTrue);
+    },
+  );
+
+  testWidgets(
     'Hardware back pops one page, returns root tab to dashboard, then confirms exit',
     (tester) async {
       final key = GlobalKey<NavigatorState>();

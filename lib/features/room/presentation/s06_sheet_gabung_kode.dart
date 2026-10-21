@@ -66,7 +66,11 @@ class _S06SheetGabungKodeState extends ConsumerState<S06SheetGabungKode> {
       final room = await repo.joinRoomByCode(code);
       if (mounted) {
         Navigator.pop(context);
-        context.push('/lobby/${room.id}');
+        if (room.status == 'berjalan') {
+          context.push('/active-session/${room.id}');
+        } else {
+          context.push('/lobby/${room.id}');
+        }
       }
     } catch (e) {
       if (mounted) {

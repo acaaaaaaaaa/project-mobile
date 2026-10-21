@@ -115,8 +115,15 @@ class AuthRepository {
     }
   }
 
+  /// Flag untuk mengaktifkan/menonaktifkan Google Sign-In sementara
+  static const bool isGoogleSignInEnabled = false;
+
   /// Masuk via Google Sign-In
   Future<({AppUser user, bool isNewUser})> signInWithGoogle() async {
+    if (!isGoogleSignInEnabled) {
+      throw 'Fitur login Google sedang dinonaktifkan sementara. Silakan masuk menggunakan Email atau Mode Uji Coba.';
+    }
+
     try {
       final googleAccount = await _googleSignIn.signIn();
       if (googleAccount == null) {
@@ -178,6 +185,58 @@ class AuthRepository {
       if (e is String) rethrow;
       debugPrint('Google Sign In error: $e');
       throw 'Gagal login via Google. Silakan coba lagi.';
+    }
+  }
+
+  /// Masuk dengan Akun Demo untuk keperluan uji coba aplikasi secara langsung
+  Future<AppUser> signInQuickDemo({String demoName = 'Penguji Coba'}) async {
+    const demoEmail = 'demo.tester@kerkom.app';
+    const demoPassword = 'TestPassword123!';
+
+    try {
+      return await signInWithEmail(demoEmail, demoPassword);
+    } catch (e) {
+      try {
+        return await signUpWithEmail(
+          displayName: demoName,
+          email: demoEmail,
+          password: demoPassword,
+        );
+      } catch (signupError) {
+        try {
+          return await signInWithEmail(demoEmail, demoPassword);
+        } catch (_) {
+          // Fallback ke Anonymous Authentication jika Email/Password provider belum aktif
+          try {
+            final cred = await _auth.signInAnonymously();
+            final user = cred.user!;
+            await user.updateDisplayName(demoName);
+            final snapshot = await _db.ref('users/${user.uid}').get();
+            if (snapshot.exists && snapshot.value is Map) {
+              return AppUser.fromMap(user.uid, snapshot.value as Map);
+            }
+            final appUser = AppUser(
+              uid: user.uid,
+              displayName: demoName,
+              email: 'demo@kerkom.local',
+              provider: 'demo',
+              photoUrl: '',
+              settings: const UserSettings(),
+            );
+            await _db.ref('users/${user.uid}').set({
+              'displayName': appUser.displayName,
+              'email': appUser.email,
+              'provider': 'demo',
+              'photoUrl': '',
+              'createdAt': ServerValue.timestamp,
+              'settings': appUser.settings.toMap(),
+            });
+            return appUser;
+          } catch (_) {
+            throw signupError;
+          }
+        }
+      }
     }
   }
 

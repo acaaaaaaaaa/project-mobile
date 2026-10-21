@@ -82,13 +82,19 @@ class _S09SesiAktifScreenState extends ConsumerState<S09SesiAktifScreen> with Wi
     monitorController.start(preserveCalibration: true);
     if (monitorController.calibration == null) monitorController.startCalibration();
 
-    // 3. Sinkronisasi foto profil pengguna ke roomMembers
-    if (currentUid != null && currentUser?.photoUrl.isNotEmpty == true) {
-      ref.read(sessionRepositoryProvider).syncMemberPhoto(
+    // 3. Pastikan status pengguna di room selalu 'aman' dan sinkronkan foto saat masuk/kembali
+    if (currentUid != null) {
+      ref.read(sessionRepositoryProvider).clearRoomViolation(
             roomId: widget.roomId,
             uid: currentUid,
-            photoUrl: currentUser!.photoUrl,
           );
+      if (currentUser?.photoUrl.isNotEmpty == true) {
+        ref.read(sessionRepositoryProvider).syncMemberPhoto(
+              roomId: widget.roomId,
+              uid: currentUid,
+              photoUrl: currentUser!.photoUrl,
+            );
+      }
     }
 
     _sensorViolationSub?.cancel();

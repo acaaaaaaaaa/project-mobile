@@ -33,12 +33,13 @@ class _SessionAccessGateState extends ConsumerState<SessionAccessGate> {
     if (roomAsync.isLoading || history.isLoading) return _loading();
     final room = roomAsync.valueOrNull;
     final now = ref.read(serverTimeServiceProvider).nowServerMs;
-    final completed =
-        room?.hasEndedAt(now) == true ||
-        (history.valueOrNull?.any(
-              (session) => session.roomId == widget.roomId,
-            ) ??
-            false);
+    // Ruang hanya dianggap selesai jika room berstatus 'selesai', waktu habis (expired),
+    // atau room sudah dihapus dari database aktif namun ada di riwayat pengguna.
+    // Jika sesi masih berjalan (belum habis), pengguna diizinkan masuk kembali.
+    final isRoomFinished = room != null && (room.status == 'selesai' || room.hasEndedAt(now));
+    final isRoomMissingButInHistory = room == null &&
+        (history.valueOrNull?.any((session) => session.roomId == widget.roomId) ?? false);
+    final completed = isRoomFinished || isRoomMissingButInHistory;
     if (completed) {
       if (!_redirecting) {
         _redirecting = true;

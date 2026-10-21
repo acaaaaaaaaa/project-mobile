@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/avatar_circle.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/secondary_button.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../room/presentation/room_controller.dart';
 import 'session_controller.dart';
@@ -485,7 +486,19 @@ class S12RingkasanSesiScreen extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // Bottom Button (Only when not in read mode)
-              if (!readOnly) ...[
+              if (room != null && room.status == 'berjalan' && !room.hasEndedAt(DateTime.now().millisecondsSinceEpoch)) ...[
+                PrimaryButton(
+                  text: 'Masuk Kembali ke Sesi',
+                  icon: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
+                  onPressed: () => context.go('/active-session/$roomId'),
+                ),
+                const SizedBox(height: 12),
+                SecondaryButton(
+                  text: 'Kembali ke Beranda',
+                  onPressed: () => context.go('/home'),
+                ),
+                const SizedBox(height: 16),
+              ] else if (!readOnly) ...[
                 PrimaryButton(
                   text: 'Kembali ke Beranda',
                   onPressed: () => context.go('/home'),

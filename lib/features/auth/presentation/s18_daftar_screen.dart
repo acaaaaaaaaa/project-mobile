@@ -126,7 +126,30 @@ class _S18DaftarScreenState extends ConsumerState<S18DaftarScreen> {
     }
   }
 
-  Future<void> _handleGoogleRegister() async {
+  void _showGoogleDisabledNotice() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.white, size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Pendaftaran Google dinonaktifkan sementara. Silakan isi form pendaftaran di atas atau klik "Masuk Mode Demo".',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0077B6),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  Future<void> _handleQuickDemoLogin() async {
     setState(() {
       _errorMessage = null;
       _isLoading = true;
@@ -134,24 +157,7 @@ class _S18DaftarScreenState extends ConsumerState<S18DaftarScreen> {
 
     try {
       final authRepo = ref.read(authRepositoryProvider);
-      final result = await authRepo.signInWithGoogle();
-
-      if (!mounted) return;
-      if (result.isNewUser) {
-        context.go('/complete-profile');
-        return;
-      }
-      final pendingCode = ref.read(pendingInviteCodeProvider);
-      if (pendingCode != null && pendingCode.isNotEmpty) {
-        try {
-          final room = await ref.read(roomRepositoryProvider).joinRoomByCode(pendingCode);
-          ref.read(pendingInviteCodeProvider.notifier).state = null;
-          if (mounted) {
-            context.go('/lobby/${room.id}');
-            return;
-          }
-        } catch (_) {}
-      }
+      await authRepo.signInQuickDemo();
       if (!mounted) return;
       context.go('/home');
     } catch (e) {
@@ -159,6 +165,10 @@ class _S18DaftarScreenState extends ConsumerState<S18DaftarScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _handleGoogleRegister() async {
+    _showGoogleDisabledNotice();
   }
 
   @override
@@ -497,19 +507,19 @@ class _S18DaftarScreenState extends ConsumerState<S18DaftarScreen> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                backgroundColor: Colors.white,
+                                backgroundColor: const Color(0xFFF8FAFC),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  _buildGoogleIcon(),
+                                  Opacity(opacity: 0.45, child: _buildGoogleIcon()),
                                   const SizedBox(width: 12),
                                   Text(
-                                    'Daftar dengan Google',
+                                    'Daftar dengan Google (Nonaktif)',
                                     style: AppTheme.labelLarge.copyWith(
-                                      color: const Color(0xFF1E293B),
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF94A3B8),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
@@ -517,7 +527,23 @@ class _S18DaftarScreenState extends ConsumerState<S18DaftarScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 14),
+
+                        // Tombol Cepat Mode Demo untuk Pengujian Langsung
+                        Center(
+                          child: TextButton.icon(
+                            onPressed: _isLoading ? null : _handleQuickDemoLogin,
+                            icon: const Icon(Icons.rocket_launch_rounded, color: Color(0xFF0077B6), size: 16),
+                            label: Text(
+                              'Ingin langsung mencoba? Masuk Mode Uji Coba',
+                              style: AppTheme.labelMedium.copyWith(
+                                color: const Color(0xFF0077B6),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
 
                         // Link Footer: Sudah punya akun? Masuk
                         Center(
